@@ -6,6 +6,8 @@
 
 #include "tcpip/tcpip.h"
 #include "utils/utils.h"
+#include "core/core.h"
+#include "log/log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,37 +20,40 @@ int main(int argc, char **argv)
     int status = 0;
     struct sockaddr_storage client;
     socklen_t client_len;
-    char buff[1024];
+    char time[1024];
+    struct packet *buff = (struct packet*)malloc(sizeof(struct packet));
 
     client_len = sizeof client;
 
     listen_fd = create_tcp_server(21337);
-    printf("listen_fd: %d\n", listen_fd);
-    printf("client_len: %d\n", client_len);
-
-    status = check_fd(1);
-    printf("status of fd 1: %d\n", status);
-    status = check_fd(listen_fd);
-    printf("status of fd listen_fd: %d\n", status);
 
     for ( ; ; )
     {
         //connect_fd = accept(listen_fd, (struct sockaddr *)&client, &client_len);
         connect_fd = accept(listen_fd, NULL, NULL);
-        printf("got connected!\n");
+
+        alexjlz_log("got connected!\n");
         if ( connect_fd == -1)
         {
             perror("accept");
             exit(-1);
         }
-        bzero(buff, sizeof buff);
-        if( (char *)alexjlz_time(buff) == NULL)
+
+        if( alexjlz_time(time) == NULL)
         {
             perror("alexjlz_time");
             exit(-1);
         }
-        printf("write to client: %s\n", buff);
-        write(connect_fd, buff, strlen(buff));
+        bzero(buff, sizeof(*buff));
+        buff = make_packet(1, (unsigned long)strlen(time), time, buff);
+
+        write(connect_fd, buff, sizeof(*buff));
+        /*
+        if ( buff != NULL)
+        {
+            free(buff);
+        }
+        */
 
         close(connect_fd);
     }

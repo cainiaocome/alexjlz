@@ -6,6 +6,7 @@
 
 #include "tcpip/tcpip.h"
 #include "utils/utils.h"
+#include "core/core.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,14 +15,15 @@
 int main(int argc, char **argv)
 {
     int fd, n = 0;
-    char buff[1024];
-    bzero(buff, sizeof(buff));
+    struct packet *buff = (struct packet*)malloc(sizeof(struct packet));
+    bzero(buff, sizeof(*buff));
 
     fd = connect_tcp_server("127.0.0.1", 21337);
-    while ( (n = read(fd, buff, 1024)) > 0 )
+    while ( (n = read(fd, buff, sizeof(struct packet))) > 0 )
     {
-        buff[1024] = 0;
-        fputs(buff, stdout);
+        //buff[sizeof(struct packet)] = 0;
+        //fputs(buff, stdout);
+        parse_packet(buff);
     }
     close(fd);
 
