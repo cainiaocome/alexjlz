@@ -7,6 +7,7 @@
 #include "tcpip/tcpip.h"
 #include "utils/utils.h"
 #include "core/core.h"
+#include "alg/alexjlz_hash.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +16,7 @@
 int main(int argc, char **argv)
 {
     int fd, n = 0;
+    unsigned long hash = 0;
     struct packet *buff = (struct packet*)malloc(sizeof(struct packet));
     bzero(buff, sizeof(*buff));
 

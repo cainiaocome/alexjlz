@@ -1,22 +1,30 @@
+distclean : clean
+	rm -rf server client
+	kill 9 `pidof server`
 clean :
 	rm -rf *.o *.a
 	rm -rf utils/*.o utils/*.a
 	rm -rf tcpip/*.o tcpip/*.a
 	rm -rf core/*.o core/*.a
-
-all_clean : clean
-	rm -rf server client
+	rm -rf log/*.o log/*.a
+	rm -rf alg/*.o alg/*.a
 
 all: client server
+	> /tmp/alexjlz_log
+	kill 9 `pidof server`
 
-server : server.o utils.a tcpip.a core.a log.a
-	gcc -o server server.o ./utils/utils.a ./tcpip/tcpip.a ./core/core.a ./log/log.a
+.PHONY : log
+log : /tmp/alexjlz_log
+	cat /tmp/alexjlz_log
+
+server : server.o utils.a tcpip.a core.a log.a alexjlz_hash.a
+	gcc -o server server.o ./utils/utils.a ./tcpip/tcpip.a ./core/core.a ./log/log.a ./alg/alexjlz_hash.a
 
 server.o : server.c
 	gcc -c server.c
 
-client : client.o utils.a tcpip.a core.a log.a
-	gcc -o client client.o ./utils/utils.a ./tcpip/tcpip.a ./core/core.a ./log/log.a
+client : client.o utils.a tcpip.a core.a log.a alexjlz_hash.a
+	gcc -o client client.o ./utils/utils.a ./tcpip/tcpip.a ./core/core.a ./log/log.a ./alg/alexjlz_hash.a
 
 client.o : client.c
 	gcc -c client.c
@@ -36,3 +44,7 @@ core.a : ./core/core.h ./core/core.c
 log.a : ./log/log.c ./log/log.h
 	gcc -c -o ./log/log.o ./log/log.c
 	ar -rc ./log/log.a ./log/log.o
+
+alexjlz_hash.a : ./alg/alexjlz_hash.c ./alg/alexjlz_hash.h
+	gcc -c -o ./alg/alexjlz_hash.o ./alg/alexjlz_hash.c
+	ar -rc ./alg/alexjlz_hash.a ./alg/alexjlz_hash.o
