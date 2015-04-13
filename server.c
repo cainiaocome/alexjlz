@@ -59,23 +59,12 @@ int main(int argc, char **argv)
         }
         else if ( pid == 0 )    // fork child
         {
-            if( alexjlz_time(time) == NULL)
-            {
-                perror("alexjlz_time");
-                exit(-1);
-            }
-            bzero(buff, sizeof(*buff));
-            buff = make_packet(1, (unsigned long)strlen(time), time, buff);
+            challenge_client(connect_fd);
 
-            write(connect_fd, buff, sizeof(*buff));
-            /*  this will generate error
-            if ( buff != NULL)
+            if( check_fd(connect_fd) )
             {
-                free(buff);
+                close(connect_fd);
             }
-            */
-
-            close(connect_fd);
 
             alexjlz_log("child %u exiting...\n", getpid());
             break;

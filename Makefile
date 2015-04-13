@@ -37,9 +37,9 @@ tcpip.a : ./tcpip/tcpip.c ./tcpip/tcpip.h
 	gcc -c -o ./tcpip/tcpip.o ./tcpip/tcpip.c
 	ar -rc ./tcpip/tcpip.a ./tcpip/tcpip.o
 
-core.a : ./core/core.h ./core/core.c
+core.a : ./core/core.h ./core/core.c utils.a
 	gcc -c -o ./core/core.o ./core/core.c
-	ar -rc ./core/core.a ./core/core.o
+	ar -rc ./core/core.a ./core/core.o ./utils/utils.o
 
 log.a : ./log/log.c ./log/log.h
 	gcc -c -o ./log/log.o ./log/log.c

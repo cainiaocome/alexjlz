@@ -4,5 +4,6 @@
     utils used by alexjlz
 */
 
-char *alexjlz_time(char *); 
+char *alexjlz_time(char *buff); 
 int check_fd(int fd);
+char *randomstr(char *buff, int length);
