@@ -21,6 +21,7 @@ const char *log_file_path = "/tmp/alexjlz_log";
 int alexjlz_log(char *format, ... )
 {
     int log_fd = 0;
+    int lock = 0;
     char msg[1024] = {0};
     va_list a_list;
     va_list b_list;
@@ -29,6 +30,12 @@ int alexjlz_log(char *format, ... )
     if(log_fd == -1)
     {
         perror("open");
+        return -1;
+    }
+    lock = flock(log_fd, LOCK_EX);  /* flock will not work under fork, but here it is ok */
+    if(lock == -1)
+    {
+        perror("flock");
         return -1;
     }
 
@@ -43,6 +50,7 @@ int alexjlz_log(char *format, ... )
     va_end(a_list);
     va_end(b_list);
 
+    lock = flock(log_fd, LOCK_EX);
     close(log_fd);
 
     return 0;
