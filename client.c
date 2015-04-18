@@ -17,21 +17,20 @@ int main(int argc, char **argv)
 {
     int fd, n = 0;
     unsigned long hash = 0;
-    char *uuid = "i love you so much";
     char value_buff[1024] = {0};
-    struct packet *buff = (struct packet*)malloc(sizeof(struct packet));
-    bzero(buff, sizeof(*buff));
+    struct packet buff;
+    bzero((char *)&buff, sizeof(buff));
 
     fd = connect_tcp_server("127.0.0.1", 21337);
-    make_pre_register_packet(uuid, buff);
-    fprintf(stdout, "register uuid:%s\n", buff->value);
-    write(fd, buff, sizeof(struct packet));
-    read(fd, buff, sizeof(struct packet));
-    hash = alexjlz_hash(buff->value);
 
-    snprintf(value_buff, 1024, "%lu", hash);
-    make_pre_response_packet(value_buff, buff);
-    write(fd, buff, sizeof(struct packet));
+    make_register_packet(&buff);
+    fprintf(stdout, "register uuid:%s\n", buff.value);
+
+    writen(fd, &buff, sizeof(buff));
+
+    readn(fd, &buff, sizeof(buff));
+    make_response_packet(&buff);
+    writen(fd, &buff, sizeof(buff));
 
     close(fd);
 

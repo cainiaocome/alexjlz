@@ -59,7 +59,7 @@ int main(int argc, char **argv)
         }
         else if ( pid == 0 )    // fork child
         {
-            challenge_client(connect_fd);
+            serve (connect_fd);
 
             if( check_fd(connect_fd) )
             {

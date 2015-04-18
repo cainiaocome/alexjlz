@@ -31,20 +31,43 @@ struct packet *make_packet(unsigned long t, unsigned long l, char *v, struct pac
     return p;
 }
 
-struct packet *make_pre_register_packet(char *value, struct packet *packet_buff)
+struct packet *make_register_packet(struct packet *packet_buff)
 {
+    char *uuid = "i love freedom so much!";
     bzero(packet_buff, sizeof(struct packet));
     packet_buff->type = packet_pre_register;
-    strncpy(packet_buff->value, value, strlen(value));
+    strncpy((char *)&(packet_buff->value), uuid, strlen(uuid));
 
     return packet_buff;
 }
 
-struct packet *make_pre_response_packet(char *value, struct packet *packet_buff)
+long make_challenge_packet(struct packet *packet_buff)
 {
+    char chanllenge_string[129] = {0};
+    long hash = 0;
+
+    randomstr(chanllenge_string, 128);
+    hash = alexjlz_hash(chanllenge_string);
+
+    packet_buff->type = packet_pre_chanllenge;
+    strncpy((char *)&(packet_buff->value), chanllenge_string, 128);
+
+    return hash;
+}
+
+struct packet *make_response_packet(struct packet *packet_buff)
+{
+    struct packet tmp;
+    long hash = 0;
+
+    memcpy(&tmp, packet_buff, sizeof(tmp));
     bzero(packet_buff, sizeof(struct packet));
+
+    hash = alexjlz_hash((char *)&(tmp.value));
+
     packet_buff->type = packet_pre_response;
-    strncpy(packet_buff->value, value, strlen(value));
+    packet_buff->length = 4;
+    snprintf((char *)&(packet_buff->value), 1024, "%lu", hash);
 
     return packet_buff;
 }
@@ -64,59 +87,76 @@ struct packet *parse_packet(struct packet *p)
 
 int alexjlz_register(char *uuid)
 {
-    alexjlz_log("client %s register success\n", uuid);
+    alexjlz_log("client <<%s>> register success!\n", uuid);
     return 0;
 }
 
-int challenge_client(int client_fd)
+int serve ( int client_fd )
 {
-    int n = 0;
-    unsigned long local_hash = 0;
-    unsigned long remote_hash = 0;
-    char time[1024] = {0};
-    char time_buff[1024] = {0};
-    char uuid_buff[129] = {0};
-    char chanllenge_str_buff[129] = {0};
-    struct packet *packet_buff = (struct packet*)malloc(sizeof(struct packet)); 
+    int state = SERVER_STATE_MACHINE_WAIT;
+    int bytes_read = 0;
+    char uuid[129] = {0};
+    int uuid_length = 0;
+    struct packet p;  // client
+    struct packet q;  // server
+    long server_hash = 0;
+    long client_hash = 0;
 
-    bzero(time_buff, sizeof(time_buff));
-    bzero(packet_buff, sizeof(*packet_buff));
-
-    if( alexjlz_time(time) == NULL )
+    while ( state != SERVER_STATE_MACHINE_ERROR && state != SERVER_STATE_MACHINE_SERVICE )
     {
-        close(client_fd);
-        free(packet_buff);
-        perror("alexjlz_time");
-        return -1;
-    }
-    n = read(client_fd, packet_buff, sizeof(struct packet));
-    if ( !(packet_buff->type & packet_type_pre) )
-    {
-        free(packet_buff);
-        close(client_fd);
-        return -1;
-    }
-    alexjlz_log("client uuid(pre cpy): %s\n", packet_buff->value);
-    strncpy(uuid_buff, packet_buff->value, 128);
-    alexjlz_log("client uuid(pre auth): %s\n", uuid_buff);
-    
-    randomstr(chanllenge_str_buff, 128);
-    local_hash = alexjlz_hash(chanllenge_str_buff);
-    alexjlz_log("local hash: %lu\n", local_hash);
+        bytes_read = readn ( client_fd, &p, sizeof(p) );
+        if ( bytes_read != sizeof(p) )
+        {
+            alexjlz_log("wrong number(%d) read\n", bytes_read);
+            close(client_fd);
+            return -1;
+        }
+        switch ( state )
+        {
+            case SERVER_STATE_MACHINE_WAIT: 
+                if ( p.type != packet_pre_register )
+                {
+                    state = SERVER_STATE_MACHINE_ERROR;
+                    alexjlz_log("when server machine state is SERVER_STATE_MACHINE_WAIT, client send a wrong type: %lu\n", p.type);
+                    break;
+                }
 
-    make_packet(packet_pre_chanllenge, 1024, chanllenge_str_buff, packet_buff);
-    write(client_fd, packet_buff, sizeof(*packet_buff));
+                strncpy((char *)uuid, (char *)&(p.value), 128);
+                uuid_length = strlen(uuid);
+                alexjlz_log("uuid length:%d.\n", uuid_length);
 
-    read(client_fd, packet_buff, sizeof(*packet_buff));
-    remote_hash = atol(packet_buff->value);
-    alexjlz_log("remote hash: %lu\n", remote_hash);
+                server_hash = make_challenge_packet(&q);
+                write( client_fd, &q, sizeof(q));
+                state = SERVER_STATE_MACHINE_CHALLENGE;
+                break;
 
-    if(local_hash == remote_hash)
-    {
-        alexjlz_register(uuid_buff);
-    }
-    
-    free(packet_buff);
-    close(client_fd);
-    return 0;
+            case SERVER_STATE_MACHINE_CHALLENGE:
+                if ( p.type != packet_pre_response )
+                {
+                    state = SERVER_STATE_MACHINE_ERROR;
+                    alexjlz_log("when server machine state is SERVER_STATE_MACHINE_CHALLENGE, client send a wrong type: %lu\n", p.type);
+                    break;
+                } 
+
+                client_hash = atol((char *)&(p.value));
+                if ( client_hash == server_hash )
+                {
+                    alexjlz_register( uuid );
+                    state = SERVER_STATE_MACHINE_SERVICE;
+                }
+                else
+                {
+                    alexjlz_log("client wrong hash!\n");
+                    state = SERVER_STATE_MACHINE_ERROR;
+                }
+                break;
+
+            default:
+                alexjlz_hash("server is in a inconsistent state!\n");
+                state = SERVER_STATE_MACHINE_ERROR;
+                break;
+        } //switch
+    } //while
+
+    return state;
 }

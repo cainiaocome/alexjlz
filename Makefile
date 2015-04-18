@@ -1,6 +1,7 @@
 distclean : clean
 	rm -rf server client
 	kill 9 `pidof server`
+	kill 9 `pidof client`
 clean :
 	rm -rf *.o *.a
 	rm -rf utils/*.o utils/*.a
@@ -12,6 +13,7 @@ clean :
 all: client server
 	> /tmp/alexjlz_log
 	kill 9 `pidof server`
+	kill 9 `pidof client`
 
 .PHONY : log
 log : /tmp/alexjlz_log
