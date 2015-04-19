@@ -5,5 +5,5 @@ while [ 1 -lt 2 ]
 do
     echo $count
     count=$(( $count + 1 ))
-    ./client
+    ./client &
 done

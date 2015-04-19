@@ -19,6 +19,9 @@ struct packet *make_packet(unsigned long, unsigned long, char*, struct packet*);
 struct packet *parse_packet(struct packet *p);
 int alexjlz_register(char *uuid);
 
+int serve( int client_fd );
+int ask_for_service( int server_fd );
+
 struct packet *make_register_packet(struct packet *packet_buff);
 long make_challenge_packet(struct packet *packet_buff);
 struct packet *make_response_packet(struct packet *packet_buff);
@@ -40,8 +43,19 @@ struct packet *make_response_packet(struct packet *packet_buff);
 */
 #define SERVER_STATE_MACHINE ( 0x0 )
 #define SERVER_STATE_MACHINE_ERROR ( 1<<31 )
+#define SERVER_STATE_MACHINE_CLOSE ( 1<<30 )
 #define SERVER_STATE_MACHINE_WAIT ( 1<<1)
 #define SERVER_STATE_MACHINE_CHALLENGE ( 1<<2 )
 #define SERVER_STATE_MACHINE_SERVICE ( 1<<3 )
+
+/*
+    client state machine
+*/
+#define CLIENT_STATE_MACHINE ( 0x0 )
+#define CLIENT_STATE_MACHINE_ERROR ( 1<<31 )
+#define CLIENT_STATE_MACHINE_CLOSE ( 1<<30 )
+#define CLIENT_STATE_MACHINE_START ( 1<<1 )
+#define CLIENT_STATE_MACHINE_REGISTER ( 1<<2 )
+#define CLIENT_STATE_MACHINE_RESPONSE ( 1<<3 )
 
 #endif

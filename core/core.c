@@ -10,6 +10,7 @@
 #include "../utils/utils.h"
 #include "../alg/alexjlz_hash.h"
 #include "../log/log.h"
+#include "../tcpip/tcpip.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,6 +35,7 @@ struct packet *make_packet(unsigned long t, unsigned long l, char *v, struct pac
 struct packet *make_register_packet(struct packet *packet_buff)
 {
     char *uuid = "i love freedom so much!";
+
     bzero(packet_buff, sizeof(struct packet));
     packet_buff->type = packet_pre_register;
     strncpy((char *)&(packet_buff->value), uuid, strlen(uuid));
@@ -95,6 +97,7 @@ int serve ( int client_fd )
 {
     int state = SERVER_STATE_MACHINE_WAIT;
     int bytes_read = 0;
+    int bytes_write = 0;
     char uuid[129] = {0};
     int uuid_length = 0;
     struct packet p;  // client
@@ -126,7 +129,12 @@ int serve ( int client_fd )
                 alexjlz_log("uuid length:%d.\n", uuid_length);
 
                 server_hash = make_challenge_packet(&q);
-                write( client_fd, &q, sizeof(q));
+                bytes_write = writen( client_fd, &q, sizeof(q));
+                if(bytes_write != sizeof(q))
+                {
+                    state = SERVER_STATE_MACHINE_ERROR;
+                    alexjlz_log("Error while write to client\n");
+                }
                 state = SERVER_STATE_MACHINE_CHALLENGE;
                 break;
 
@@ -158,5 +166,60 @@ int serve ( int client_fd )
         } //switch
     } //while
 
+    return state;
+}
+
+int ask_for_service( int server_fd )
+{
+    int state = CLIENT_STATE_MACHINE_START;
+    int bytes_read = 0;
+    int bytes_write = 0;
+    unsigned long hash = 0;
+    struct packet p; // client (self)
+    struct packet q; // server (remote)
+
+    while ( state != CLIENT_STATE_MACHINE_ERROR && state != CLIENT_STATE_MACHINE_CLOSE )
+    {
+        switch (state)
+        {
+            case CLIENT_STATE_MACHINE_START:
+                make_register_packet(&p);
+                
+                bytes_write = writen(server_fd, &p, sizeof(p));
+                if ( bytes_write != sizeof(p) )
+                {
+                    perror("writen");
+                    state = CLIENT_STATE_MACHINE_ERROR;
+                    break;
+                }
+                state = CLIENT_STATE_MACHINE_REGISTER;
+                break;
+
+            case CLIENT_STATE_MACHINE_REGISTER:
+                bytes_read = readn(server_fd, &q, sizeof(q));
+                if ( bytes_read != sizeof(q) )
+                {
+                    perror("readn");
+                    state = CLIENT_STATE_MACHINE_ERROR;
+                }
+                state = CLIENT_STATE_MACHINE_RESPONSE;
+                break;
+
+            case CLIENT_STATE_MACHINE_RESPONSE:
+                make_response_packet(&q);
+                bcopy(&q, &p, sizeof(p));
+                bytes_write = writen( server_fd, &p, sizeof(p) );
+                if ( bytes_write != sizeof(p) )
+                {   
+                    perror("writen");
+                    state = CLIENT_STATE_MACHINE_ERROR;
+                }
+                state = CLIENT_STATE_MACHINE_CLOSE;
+                break;
+            default:
+                state = CLIENT_STATE_MACHINE_CLOSE;
+                break;
+        }
+    }
     return state;
 }

@@ -2,3 +2,4 @@
 *.a
 server
 client
+test.c
