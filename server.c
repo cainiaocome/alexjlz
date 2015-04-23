@@ -1,7 +1,8 @@
 /*
    created at 2015//4/9
-   latest modified at 2015/4/11
-   test server used by alexjlz
+   latest modified at 2015/4/23
+   alexjlz server used by alexjlz
+   ( I have never thought it would go that far :-) )
  */
 
 #include "tcpip/tcpip.h"
@@ -15,6 +16,7 @@
 #include <signal.h>  // signal
 #include <unistd.h>  // daemon
 #include <netinet/in.h>
+#include <errno.h>
 
 int main(int argc, char **argv)
 {
@@ -31,25 +33,31 @@ int main(int argc, char **argv)
     // at now we dont need it 
     if (daemon(0, 0) < 0)
     {
-        perror("daemon");
+        alexjlz_log("daemon");
         exit(-1);
     }
 
-    signal(SIGCHLD, SIG_IGN); // if we ignore SIGCHLD, we dont have to wait for child, and it will not become zombie.
+    //signal(SIGCHLD, SIG_IGN); // if we ignore SIGCHLD, we dont have to wait for child, and it will not become zombie.
                                 // but this is not the best way.
+    Signal(SIGCHLD, sig_child);  // ( in utils ) this is better
+
     listen_fd = create_tcp_server(21337);
 
     for ( ; ; )
     {
         //connect_fd = accept(listen_fd, (struct sockaddr *)&client, &client_len);
-        connect_fd = accept(listen_fd, NULL, NULL);
+        if ( connect_fd = accept(listen_fd, NULL, NULL) < 0 )  
+        {
+            if ( errno == EINTR ) // handle interrupted system call
+                continue;
+            else
+            {
+                alexjlz_log("accept");
+                exit(-1);
+            }
+        }
 
         alexjlz_log("got connected! connect_fd: %u\n", connect_fd);
-        if ( connect_fd == -1)
-        {
-            perror("accept");
-            exit(-1);
-        }
 
         pid = fork();
         if ( pid < 0 )          // fork error
@@ -59,6 +67,11 @@ int main(int argc, char **argv)
         }
         else if ( pid == 0 )    // fork child
         {
+            if ( check_fd(listen_fd) )
+            {
+                close(listen_fd);
+            }
+
             serve (connect_fd);
 
             if( check_fd(connect_fd) )

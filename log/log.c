@@ -50,7 +50,12 @@ int alexjlz_log(char *format, ... )
     va_end(a_list);
     va_end(b_list);
 
-    lock = flock(log_fd, LOCK_EX);
+    lock = flock(log_fd, LOCK_UN);
+    if(lock == -1)
+    {
+        perror("flock");
+        return -1;
+    }
     close(log_fd);
 
     return 0;
