@@ -1,10 +1,13 @@
 VPATH = adt core log alg daemon tcpip utils
+CC = gcc
+private_libs = utils.a tcpip.a core.a log.a alexjlz_hash.a daemon.a dictionary.a
+
 distclean : clean
 	rm -rf server client
 	kill 9 `pidof server`
 	kill 9 `pidof client`
 clean :
-	rm -rf *.o *.a
+	rm -rf *.o *.a client server
 
 all: client server
 	> /tmp/alexjlz_log
@@ -17,12 +20,12 @@ log : /tmp/alexjlz_log
 
 server.o : server.c
 
-server : server.o utils.a tcpip.a core.a log.a alexjlz_hash.a daemon.a dictionary.a
+server : server.o $(private_libs)
 	gcc -o server $^
 
 client.o : client.c
 
-client : client.o utils.a tcpip.a core.a log.a alexjlz_hash.a dictionary.a
+client : client.o $(private_libs)
 	gcc -o client $^
 
 utils.o : utils.c utils.h

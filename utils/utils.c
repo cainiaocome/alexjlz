@@ -61,6 +61,24 @@ char *randomstr(char *buff, int length)
     return buff;
 }
 
+/*
+   return an unsigned long number ( a<= r <b )
+ */
+unsigned long randomlong(unsigned long a, unsigned long b)
+{
+    unsigned long distance = b>a?b-a:a-b;
+    int urandom_fd = 0; // file descriptor for /dev/urondom
+    unsigned long r = 0;
+
+    urandom_fd = open("/dev/urandom", O_RDONLY);
+
+    read(urandom_fd, &r, sizeof(r)); 
+
+    close(urandom_fd);
+    return r%distance + a;
+}
+
+
 void sig_child(int signo)
 {
 	pid_t	pid;

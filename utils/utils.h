@@ -14,3 +14,9 @@ char *randomstr(char *buff, int length);
 void sig_child(int signo);
 FILE *get_stdout(char *cmd);
 int close_stdout(FILE *output);
+
+/*
+   a simple random long integer generator...
+   returns an unsigned long number ( a<= r <b )
+ */
+unsigned long randomlong(unsigned long a, unsigned long b);
