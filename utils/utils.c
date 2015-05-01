@@ -33,14 +33,6 @@ char *alexjlz_time(char *buff)
     }
     
     snprintf(buff, 1024, "%s", ascii_time);
-    // free ascii_time will generate error
-    /*
-    if ( ascii_time != NULL)
-    {
-        free(ascii_time);
-        ascii_time = NULL;
-    }
-    */
     return buff;
 }
 
@@ -114,4 +106,20 @@ Signal(int signo, Sigfunc *func)	/* for our signal() function */
         exit(-1);
     }
 	return(sigfunc);
+}
+
+FILE *get_stdout(char *cmd)
+{
+    FILE *output = popen(cmd, "r");
+
+    return output;
+}
+int close_stdout(FILE *output)
+{
+    if (output != NULL)
+    {
+        pclose(output);
+    }
+
+    return 0;
 }

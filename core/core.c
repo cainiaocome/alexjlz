@@ -1,7 +1,8 @@
 /*
     core.c
 
-    last modified at: 2015/4/10
+    last modified at: 2015/4/25
+    error
     
     defines packet and functions used in communicate between client and server
 */
@@ -13,8 +14,12 @@
 #include "../tcpip/tcpip.h"
 
 #include <stdio.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 struct packet *make_packet(unsigned long t, unsigned long l, char *v, struct packet *p)
 {
@@ -74,6 +79,24 @@ struct packet *make_response_packet(struct packet *packet_buff)
     return packet_buff;
 }
 
+struct packet *make_cur_close_packet(struct packet *packet_buff)
+{
+    struct packet *p = packet_buff;
+    bzero(p, sizeof(*p));
+    p->type = packet_cur_close;
+
+    return p;
+}
+
+struct packet *make_cur_end_packet(struct packet *packet_buff)
+{
+    struct packet *p = packet_buff;
+    bzero(p, sizeof(*p));
+    p->type = packet_cur_response_end;
+
+    return p;
+}    
+
 struct packet *parse_packet(struct packet *p)
 {
     unsigned long type = p->type;
@@ -93,6 +116,25 @@ int alexjlz_register(char *uuid)
     return 0;
 }
 
+int close_service(int client_fd)
+{
+    struct packet p; // 
+    int bytes_write = 0;
+    int status = 0;
+
+    bzero(&p, sizeof(p));
+    make_cur_close_packet(&p);
+
+    bytes_write = writen(client_fd, &p, sizeof(p));
+    if ( bytes_write != sizeof(p))
+    {
+        alexjlz_log("close_service writen");
+        status = -1;
+    }
+
+    return status;
+}
+
 int serve ( int client_fd )
 {
     int state = SERVER_STATE_MACHINE_WAIT;
@@ -104,16 +146,31 @@ int serve ( int client_fd )
     struct packet q;  // server
     long server_hash = 0;
     long client_hash = 0;
+    char client_ip[1024];
 
-    while ( state != SERVER_STATE_MACHINE_ERROR && state != SERVER_STATE_MACHINE_SERVICE )
+    if ( get_remote_ip(client_fd, client_ip) == -1 )
     {
-        bytes_read = readn ( client_fd, &p, sizeof(p) );
-        if ( bytes_read != sizeof(p) )
+        alexjlz_log("Error, exit...\n");
+        exit(-1);
+    }
+    else
+    {
+        alexjlz_log("got connected from client %s\n", client_ip);
+    }
+
+    while ( state != SERVER_STATE_MACHINE_ERROR && state != SERVER_STATE_MACHINE_CLOSE_DONE )
+    {
+        if ( state != SERVER_STATE_MACHINE_SERVICE )
         {
-            alexjlz_log("wrong number(%d) read\n", bytes_read);
-            close(client_fd);
-            return -1;
+            bytes_read = readn ( client_fd, &p, sizeof(p) );
+            if ( bytes_read != sizeof(p) )
+            {
+                alexjlz_log("serve readn read %d bytes\n", bytes_read);
+                close(client_fd);
+                return -1;
+            }
         }
+
         switch ( state )
         {
             case SERVER_STATE_MACHINE_WAIT: 
@@ -159,6 +216,38 @@ int serve ( int client_fd )
                 }
                 break;
 
+            case SERVER_STATE_MACHINE_SERVICE:
+            // to do
+                do
+                {
+                    q.type = packet_cur_post;
+                    strcpy(q.value, "ifconfig -a");
+
+                    writen(client_fd, &q, sizeof(q));
+                    do
+                    {
+                        readn(client_fd, &p, sizeof(p));
+                        alexjlz_log("%s", p.value);
+                    }while( p.type != packet_cur_response_end );
+                }while(0);
+                alexjlz_log("\n");
+
+                close_service(client_fd);
+                state = SERVER_STATE_MACHINE_CLOSE;
+                break;
+
+            case SERVER_STATE_MACHINE_CLOSE:
+                make_cur_close_packet(&q);
+                bytes_write = writen(client_fd, &q, sizeof(q));
+                if ( bytes_write != sizeof(q) )
+                {
+                    perror("SERVER_STATE_MACHINE_CLOSE writen");
+                    state = SERVER_STATE_MACHINE_ERROR;
+                }
+
+                state = SERVER_STATE_MACHINE_CLOSE_DONE;
+                break;
+
             default:
                 alexjlz_hash("server is in a inconsistent state!\n");
                 state = SERVER_STATE_MACHINE_ERROR;
@@ -169,12 +258,36 @@ int serve ( int client_fd )
     return state;
 }
 
+int send_output(FILE *output, int server_fd)
+{
+    struct packet p; // client (self)
+    struct packet q; // server (remote)
+    int bytes_read = 0;
+    int bytes_write = 0;
+
+    while ( !feof(output) && !ferror(output) && (output!=NULL) )
+    {
+        bzero(&p, sizeof(p));
+        p.type = packet_cur_response_continue;
+        fread(p.value, 1, 1023, output);
+        
+        bytes_write = writen(server_fd, &p, sizeof(p));
+        if ( bytes_write != sizeof(p) )
+            break;
+    }
+    make_cur_end_packet(&p);
+    bytes_write = writen(server_fd, &p, sizeof(p));
+        
+    return 0;
+}
+
 int ask_for_service( int server_fd )
 {
     int state = CLIENT_STATE_MACHINE_START;
     int bytes_read = 0;
     int bytes_write = 0;
     unsigned long hash = 0;
+    FILE *output = NULL;
     struct packet p; // client (self)
     struct packet q; // server (remote)
 
@@ -192,6 +305,7 @@ int ask_for_service( int server_fd )
                     state = CLIENT_STATE_MACHINE_ERROR;
                     break;
                 }
+                fprintf(stdout, "register packet sent!(length in bytes: %d)\n", bytes_write);
                 state = CLIENT_STATE_MACHINE_REGISTER;
                 break;
 
@@ -202,6 +316,7 @@ int ask_for_service( int server_fd )
                     perror("readn");
                     state = CLIENT_STATE_MACHINE_ERROR;
                 }
+                fprintf(stdout, "chanllenge received!\n");
                 state = CLIENT_STATE_MACHINE_RESPONSE;
                 break;
 
@@ -214,8 +329,38 @@ int ask_for_service( int server_fd )
                     perror("writen");
                     state = CLIENT_STATE_MACHINE_ERROR;
                 }
+                fprintf(stdout, "response sent!\n");
+                state = CLIENT_STATE_MACHINE_SERVICE;
+                break;
+
+            case CLIENT_STATE_MACHINE_SERVICE:
+                do
+                {
+                    bytes_read = readn(server_fd, &q, sizeof(q));
+                    if ( bytes_read != sizeof(q) )
+                    {
+                        perror("CLIENT_STATE_MACHINE_SERVICE, readn");
+                        state = CLIENT_STATE_MACHINE_ERROR;
+                    }
+                    switch(q.type) 
+                    {
+                        case packet_cur_post:
+                            output = get_stdout(q.value);
+                            send_output(output, server_fd);
+                            close_stdout(output);
+
+                        case packet_cur_close:
+                            break;
+
+                        default:
+                            q.type = packet_cur_close;
+                            break;
+                    }
+                }while(q.type != packet_cur_close);
+
                 state = CLIENT_STATE_MACHINE_CLOSE;
                 break;
+
             default:
                 state = CLIENT_STATE_MACHINE_CLOSE;
                 break;

@@ -13,3 +13,4 @@ int create_tcp_server(short port);
 int connect_tcp_server(char *ip, short port);
 ssize_t readn(int fd, void *vptr, size_t n);
 ssize_t writen(int fd, const void *vptr, size_t n);
+int get_remote_ip(int fd, char remote_ip[]);

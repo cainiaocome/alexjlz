@@ -9,6 +9,9 @@
 
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -125,3 +128,24 @@ writen(int fd, const void *vptr, size_t n)
 }
 /* end writen */
 
+/* get remote peer ip from file descriptor
+    remote_ip should be char [1024] */
+int get_remote_ip(int fd, char remote_ip[])
+{
+    int status = 0;
+    struct sockaddr client;
+    socklen_t client_len = sizeof(client);
+    
+    status = getpeername(fd, &client, &client_len);
+    if ( status == -1 )
+    {
+        alexjlz_log("Error getpeername %s\n", strerror(errno));
+        return -1;
+    }
+    else
+    {
+        getnameinfo(&client, sizeof(client), remote_ip, 1023, NULL, 0, NI_NUMERICHOST | NI_NUMERICSERV);
+        return 0;
+    }
+
+}
