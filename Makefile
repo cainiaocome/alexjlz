@@ -17,12 +17,12 @@ log : /tmp/alexjlz_log
 
 server.o : server.c
 
-server : server.o utils.a tcpip.a core.a log.a alexjlz_hash.a daemon.a
+server : server.o utils.a tcpip.a core.a log.a alexjlz_hash.a daemon.a dictionary.a
 	gcc -o server $^
 
 client.o : client.c
 
-client : client.o utils.a tcpip.a core.a log.a alexjlz_hash.a
+client : client.o utils.a tcpip.a core.a log.a alexjlz_hash.a dictionary.a
 	gcc -o client $^
 
 utils.o : utils.c utils.h
@@ -37,6 +37,8 @@ log.o : log.c log.h
 log.a : log.o
 alexjlz_hash.o : alexjlz_hash.c alexjlz_hash.h
 alexjlz_hash.a : alexjlz_hash.o
+dictionary.o : dictionary.c dictionary.h
+dictionary.a : dictionary.o
 
 %.o : %.c %.h
 	gcc -c -o $@ $<

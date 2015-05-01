@@ -10,6 +10,13 @@
 
 #include <stdio.h>
 
+struct client
+{
+    char uuid[256];
+    char name[256];
+    char info[4096];
+};
+
 struct packet
 {
     unsigned long type;
