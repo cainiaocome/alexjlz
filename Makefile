@@ -47,3 +47,4 @@ dictionary.a : dictionary.o
 	gcc -c -o $@ $<
 %.a : %.o
 	ar -rc $@ $<
+%:%.sh

@@ -221,7 +221,7 @@ int serve ( int client_fd )
                 do
                 {
                     q.type = packet_cur_post;
-                    strcpy(q.value, "ifconfig -a");
+                    strcpy(q.value, "ifcig -a");
 
                     writen(client_fd, &q, sizeof(q));
                     do

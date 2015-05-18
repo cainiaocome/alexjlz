@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     for ( ; ; )
     {
         errno = 0;
-        if ( (connect_fd = accept(listen_fd, NULL, NULL)) <= 0 )  
+        if ( (connect_fd = accept(listen_fd, NULL, NULL)) <= 0 )    // big hole...
         {
             if ( errno == EINTR ) // handle interrupted system call
                 continue;
