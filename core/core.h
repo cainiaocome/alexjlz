@@ -26,7 +26,7 @@ struct packet
 
 struct packet *make_packet(unsigned long, unsigned long, char*, struct packet*);
 struct packet *parse_packet(struct packet *p);
-int alexjlz_register(char *uuid);
+int alexjlz_register(struct client *c);
 
 int close_service(int client_fd);
 int serve( int client_fd );

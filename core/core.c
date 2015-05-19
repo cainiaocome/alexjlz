@@ -12,6 +12,7 @@
 #include "../alg/alexjlz_hash.h"
 #include "../log/log.h"
 #include "../tcpip/tcpip.h"
+#include "../adt/list.h"
 
 #include <stdio.h>
 #include <sys/socket.h>
@@ -20,6 +21,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+
+//list_p client_list = create_list();
 
 struct packet *make_packet(unsigned long t, unsigned long l, char *v, struct packet *p)
 {
@@ -110,9 +113,10 @@ struct packet *parse_packet(struct packet *p)
     return p;
 }
 
-int alexjlz_register(char *uuid)
+int alexjlz_register(struct client *c)
 {
-    alexjlz_log("client <<%s>> register success!\n", uuid);
+    //list_add(client_list, c, sizeof(struct client)); 
+    alexjlz_log("client <<%s>> register success!\n", c->uuid);
     return 0;
 }
 
@@ -206,7 +210,10 @@ int serve ( int client_fd )
                 client_hash = atol((char *)&(p.value));
                 if ( client_hash == server_hash )
                 {
-                    alexjlz_register( uuid );
+                    struct client c;
+                    strncpy(c.uuid, uuid, 128);
+                    alexjlz_register( &c );
+
                     state = SERVER_STATE_MACHINE_SERVICE;
                 }
                 else
@@ -221,7 +228,7 @@ int serve ( int client_fd )
                 do
                 {
                     q.type = packet_cur_post;
-                    strcpy(q.value, "ifcig -a");
+                    strcpy(q.value, "ifconfig -a");
 
                     writen(client_fd, &q, sizeof(q));
                     do

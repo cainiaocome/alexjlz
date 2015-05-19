@@ -15,7 +15,7 @@ all:
 	kill 9 `pidof server`
 	kill 9 `pidof client`
 	
-	cd adt; make; cp libds.a ..
+	cd adt; make
 	make client
 	make server
 
