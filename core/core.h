@@ -29,7 +29,7 @@ struct packet *parse_packet(struct packet *p);
 int alexjlz_register(struct client *c);
 
 int close_service(int client_fd);
-int serve( int client_fd );
+void *serve( void *arg);
 int send_output(FILE *output, int server_fd);
 int ask_for_service( int server_fd );
 

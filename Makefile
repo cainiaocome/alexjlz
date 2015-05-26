@@ -1,7 +1,7 @@
 VPATH = adt core log alg daemon tcpip utils
 CC = gcc
 #CC_FLAGS = -static
-CC_FLAGS = 
+CC_FLAGS = -pthread
 private_libs = utils.a tcpip.a core.a log.a alexjlz_hash.a daemon.a libds.a
 
 distclean : clean

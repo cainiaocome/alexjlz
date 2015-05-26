@@ -16,16 +16,21 @@
 #include <string.h>
 #include <signal.h>  // signal
 #include <unistd.h>  // daemon
+#include <pthread.h> // pthread
 #include <netinet/in.h>
 #include <errno.h>
 
-extern int listen_fd;
-extern int connect_fd; // for client to connect and exchange msg
-extern int alexjlz_fd; // for alexjlz to connect and control
+//extern int listen_fd;
+//extern int connect_fd; // for client to connect and exchange msg
+//extern int alexjlz_fd; // for alexjlz to connect and control
+
+int listen_fd, connect_fd = 0;  // for client to connect
+int alexjlz_fd = 0; // for alexjlz to connect and control
+
 
 int main(int argc, char **argv)
 {
-    pid_t pid = 0;
+    pthread_t tid = 0;
     int status = 0;
     struct sockaddr_storage client;
     socklen_t client_len;
@@ -59,35 +64,18 @@ int main(int argc, char **argv)
             }
         }
 
-        alexjlz_log("got connected! connect_fd: %u\n", connect_fd);
+        alexjlz_log("got client connecting! connect_fd: %u\n", connect_fd);
 
-        pid = fork();
-        if ( pid < 0 )          // fork error
+        //pid = fork();
+        while ( (status=pthread_create(&tid, NULL, &serve, &connect_fd)) == EAGAIN ) {}
+        if ( status < 0 )          // pthread_create error
         {
-            alexjlz_log("fork error");
-            exit(-1);
+            alexjlz_log("pthread_create error:%s\n", strerror(errno));
+            //pthread_cancel // to to
         }
-        else if ( pid == 0 )    // fork child
+        else
         {
-            if ( check_fd(listen_fd) )
-            {
-                close(listen_fd);
-            }
-
-            serve (connect_fd);
-
-            if( check_fd(connect_fd) )
-            {
-                close(connect_fd);
-            }
-
-            alexjlz_log("child %u exiting...\n", getpid());
-            break;
-            alexjlz_log("this should never appear!\n");
-        }
-        else          // todo: we need to wait for our child process, or it will become zombie
-        {
-            close(connect_fd);
+            pthread_detach(tid);
             continue;            
         }
     }

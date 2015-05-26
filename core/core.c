@@ -23,9 +23,6 @@
 #include <errno.h>
 
 //list_p client_list = create_list();
-int listen_fd, connect_fd = 0;  // for client to connect
-int alexjlz_fd = 0; // for alexjlz to connect and control
-
 struct packet *make_packet(unsigned long t, unsigned long l, char *v, struct packet *p)
 {
     if (l > 1024)
@@ -141,8 +138,9 @@ int close_service(int client_fd)
     return status;
 }
 
-int serve ( int client_fd )
+void *serve ( void *arg )
 {
+    int client_fd = *((int *)arg);
     int state = SERVER_STATE_MACHINE_WAIT;
     int bytes_read = 0;
     int bytes_write = 0;
@@ -173,7 +171,7 @@ int serve ( int client_fd )
             {
                 alexjlz_log("serve readn read %d bytes\n", bytes_read);
                 close(client_fd);
-                return -1;
+                return ;
             }
         }
 
@@ -264,7 +262,7 @@ int serve ( int client_fd )
         } //switch
     } //while
 
-    return state;
+    return ;
 }
 
 int send_output(FILE *output, int server_fd)
