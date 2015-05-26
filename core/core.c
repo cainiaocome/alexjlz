@@ -23,6 +23,8 @@
 #include <errno.h>
 
 //list_p client_list = create_list();
+int listen_fd, connect_fd = 0;  // for client to connect
+int alexjlz_fd = 0; // for alexjlz to connect and control
 
 struct packet *make_packet(unsigned long t, unsigned long l, char *v, struct packet *p)
 {

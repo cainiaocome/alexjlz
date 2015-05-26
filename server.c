@@ -1,6 +1,6 @@
 /*
-   created at 2015//4/9
-   latest modified at 2015/4/23
+   created at 2015/4/9
+   latest modified at 2015/5/19
    alexjlz server used by alexjlz
    ( I have never thought it would go that far :-) )
  */
@@ -19,10 +19,13 @@
 #include <netinet/in.h>
 #include <errno.h>
 
+extern int listen_fd;
+extern int connect_fd; // for client to connect and exchange msg
+extern int alexjlz_fd; // for alexjlz to connect and control
+
 int main(int argc, char **argv)
 {
     pid_t pid = 0;
-    int listen_fd, connect_fd = 0;
     int status = 0;
     struct sockaddr_storage client;
     socklen_t client_len;
@@ -31,14 +34,6 @@ int main(int argc, char **argv)
 
     //client_len = sizeof(client);
 
-    // at now we dont need it 
-    /*
-    if (daemon(0, 0) < 0)
-    {
-        alexjlz_log("daemon error");
-        exit(-1);
-    }
-    */
     daemonize();
 
     //signal(SIGCHLD, SIG_IGN); // if we ignore SIGCHLD, we dont have to wait for child, and it will not become zombie.
@@ -46,7 +41,9 @@ int main(int argc, char **argv)
     Signal(SIGCHLD, sig_child);  // ( in utils ) this is better
 
     listen_fd = create_tcp_server(21337);
+    alexjlz_fd = create_tcp_server(31337);
     alexjlz_log("listen_fd set to %d\n", listen_fd);
+    alexjlz_log("alexjlz_fd set to %d\n", alexjlz_fd);
 
     for ( ; ; )
     {

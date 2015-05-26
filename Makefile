@@ -1,5 +1,7 @@
 VPATH = adt core log alg daemon tcpip utils
 CC = gcc
+#CC_FLAGS = -static
+CC_FLAGS = 
 private_libs = utils.a tcpip.a core.a log.a alexjlz_hash.a daemon.a libds.a
 
 distclean : clean
@@ -26,12 +28,12 @@ log : /tmp/alexjlz_log
 server.o : server.c
 
 server : server.o $(private_libs)
-	gcc -o server $^
+	$(CC) $(CC_FLAGS) -o server $^
 
 client.o : client.c
 
 client : client.o $(private_libs)
-	gcc -o client $^
+	$(CC) $(CC_FLAGS) -o client $^
 
 utils.o : utils.c utils.h
 utils.a : utils.o
@@ -49,7 +51,7 @@ dictionary.o : dictionary.c dictionary.h
 dictionary.a : dictionary.o
 
 %.o : %.c %.h
-	gcc -c -o $@ $<
+	$(CC) $(CC_FLAGS) -c -o $@ $<
 %.a : %.o
 	ar -rc $@ $<
 %:%.sh

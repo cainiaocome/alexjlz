@@ -17,7 +17,7 @@ int main(int argc, char **argv)
 {
     int fd, n = 0;
 
-    fd = connect_tcp_server("127.0.0.1", 21337);
+    fd = connect_tcp_server("172.16.48.1", 21337);
     if ( ask_for_service( fd ) == CLIENT_STATE_MACHINE_ERROR )
     {
         fprintf(stdout, "error in client\n");
