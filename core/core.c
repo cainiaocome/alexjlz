@@ -170,7 +170,8 @@ void *serve ( void *arg )
             if ( bytes_read != sizeof(p) )
             {
                 alexjlz_log("serve readn read %d bytes\n", bytes_read);
-                close(client_fd);
+                if ( check_fd(client_fd) )
+                    close(client_fd);
                 return ;
             }
         }
@@ -262,6 +263,8 @@ void *serve ( void *arg )
         } //switch
     } //while
 
+    if ( check_fd(client_fd) )
+        close(client_fd);
     return ;
 }
 

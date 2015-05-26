@@ -66,7 +66,6 @@ int main(int argc, char **argv)
 
         alexjlz_log("got client connecting! connect_fd: %u\n", connect_fd);
 
-        //pid = fork();
         while ( (status=pthread_create(&tid, NULL, &serve, &connect_fd)) == EAGAIN ) {}
         if ( status < 0 )          // pthread_create error
         {

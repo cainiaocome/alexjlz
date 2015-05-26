@@ -8,6 +8,7 @@ distclean : clean
 	rm -rf server client
 	kill 9 `pidof server`
 	kill 9 `pidof client`
+	> /tmp/alexjlz_log
 clean :
 	rm -rf *.o *.a client server
 	cd adt; make clean
