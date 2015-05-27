@@ -10,6 +10,7 @@
 #include "core/core.h"
 #include "log/log.h"
 #include "daemon/daemon.h"
+#include "adt/list.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,24 +21,17 @@
 #include <netinet/in.h>
 #include <errno.h>
 
-//extern int listen_fd;
-//extern int connect_fd; // for client to connect and exchange msg
-//extern int alexjlz_fd; // for alexjlz to connect and control
 
+extern list_p client_list;
 
 int main(int argc, char **argv)
 {
     int listen_fd, connect_fd = 0;  // for client to connect
     int alexjlz_fd = 0; // for alexjlz to connect and control , todo
-    
     pthread_t tid = 0;
     int status = 0;
-    struct sockaddr_storage client;
-    socklen_t client_len;
-    char time[1024];
-    struct packet *buff = (struct packet*)malloc(sizeof(struct packet));
-
-    //client_len = sizeof(client);
+    
+    client_list = create_list();
 
     daemonize();
 

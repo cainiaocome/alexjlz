@@ -1,7 +1,7 @@
 CFLAGS=-O2 -Wall
 LDFLAGS=-L. -lds
-HEADERS=list.h vector.h hashmap.h strutils.h heap.h
-OBJS=list.o vector.o hashmap.o strutils.o heap.o
+HEADERS=list.h vector.h hashmap.h strutils.h heap.h iniparser.h
+OBJS=list.o vector.o hashmap.o strutils.o heap.o iniparser.o
 PREFIX=/usr/local
 CC=gcc
 

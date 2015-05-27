@@ -17,6 +17,8 @@ int main(int argc, char **argv)
 {
     int fd, n = 0;
 
+    generate_uuid();
+
     fd = connect_tcp_server("172.16.48.1", 21337);
     if ( ask_for_service( fd ) == -1 )
     {

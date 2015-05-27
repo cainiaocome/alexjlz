@@ -5,6 +5,7 @@
 */
 
 #include "utils.h"
+#include "../alg/alexjlz_hash.h"
 
 #include <time.h>
 #include <stdio.h>
@@ -13,6 +14,8 @@
 #include <errno.h>
 #include <signal.h>
 #include <string.h>
+
+char uuid[32] = {0};
 
 char *alexjlz_time(char *buff)
 {
@@ -193,3 +196,17 @@ int parse_string(char *msg, char *buff, char *key)
     return 0;
 }
 
+int generate_uuid()
+{
+    char buff[256] = {0};
+    int fd = open("/etc/passwd", O_RDONLY);
+    if ( fd == -1 )
+    {
+        return -1;
+    }
+
+    read(fd, buff, 256); 
+    alexjlz_hash(buff, uuid);
+
+    return 0;
+}
