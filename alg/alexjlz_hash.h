@@ -5,4 +5,4 @@
     hash function for alexjlz
 */
 
-unsigned long alexjlz_hash(char *);
+int alexjlz_hash(char *buff, char *hash); // len(hash) should >= 20, i suggest 32

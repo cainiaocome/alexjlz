@@ -20,3 +20,7 @@ int close_stdout(FILE *output);
    returns an unsigned long number ( a<= r <b )
  */
 unsigned long randomlong(unsigned long a, unsigned long b);
+
+
+int parse_string(char *msg, char *buff, char *key);
+int index_string(char *msg, char *buff, int index);

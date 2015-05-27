@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <signal.h>
+#include <string.h>
 
 char *alexjlz_time(char *buff)
 {
@@ -141,3 +142,54 @@ int close_stdout(FILE *output)
 
     return 0;
 }
+
+int index_string(char *msg, char *buff, int index)
+{
+    char *p = msg;
+    char *q = buff;
+    char *r = msg;
+    char separator = ' ';
+    int this_index = 0;
+
+    while ( this_index < index )
+    {
+        r = strchr(r, separator);
+        if ( r == NULL )
+        {
+            return -1;
+        }
+        r++;
+        this_index++;
+    }
+    while ( *r != separator && *r != '\0' )
+    {
+        *q = *r;
+        q++;
+        r++;
+    }
+
+    return 0;
+}
+
+int parse_string(char *msg, char *buff, char *key)
+{
+    char *p = msg;
+    char *q = buff;
+    char separator = ' ';
+
+    p = strstr(msg, key);
+    if ( p == NULL )
+    {
+        return -1;
+    }
+    p = p + strlen(key) + 1;
+    while ( *p != separator && *p != '\0' )
+    {
+        *q = *p;
+        q++;
+        p++;
+    }
+
+    return 0;
+}
+

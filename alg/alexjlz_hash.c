@@ -6,26 +6,24 @@
 */
 
 #include <string.h>
-#include <stdio.h>
-
-unsigned long max_hash_buff_length = 1024;
-
-unsigned long alexjlz_hash(char *buff)
+const static char asctable[] = 
 {
-    unsigned hash_result = 0;
-    char *p = buff;
+    [0] = '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+};
 
-    if ( strlen(buff) > max_hash_buff_length)
-    {
-        return -1;
-    }
+int alexjlz_hash(char *buff, char *hash) // len(hash) should >= 20
+{
+    char *p = buff;
+    int tmp = 0;
+    int index = 0;
 
     while( *p != 0 )
     {
-        //fprintf(stdout, "hash_result: %lu\n", hash_result);
-        hash_result =  *p + hash_result<<3;
+        tmp = (*p + *(p+1))%16;
+        hash[index] = asctable[tmp];
+        index = (index+1)%20;
         p++;
     }
-    
-    return hash_result;
+
+    return 0;
 }

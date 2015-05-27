@@ -24,12 +24,12 @@
 //extern int connect_fd; // for client to connect and exchange msg
 //extern int alexjlz_fd; // for alexjlz to connect and control
 
-int listen_fd, connect_fd = 0;  // for client to connect
-int alexjlz_fd = 0; // for alexjlz to connect and control
-
 
 int main(int argc, char **argv)
 {
+    int listen_fd, connect_fd = 0;  // for client to connect
+    int alexjlz_fd = 0; // for alexjlz to connect and control , todo
+    
     pthread_t tid = 0;
     int status = 0;
     struct sockaddr_storage client;
