@@ -19,7 +19,7 @@ int alexjlz_hash(char *buff, char *hash) // len(hash) should >= 20
 
     while( *p != 0 )
     {
-        tmp = (*p + *(p+1))%16;
+        tmp = (*p + *(p+1) + hash[index])%16;
         hash[index] = asctable[tmp];
         index = (index+1)%20;
         p++;

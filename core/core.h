@@ -15,7 +15,8 @@ struct client
 {
     char uuid[256];
     char ip[32];
-    char cmd[1024];
+    char info[512];
+    char cmd[512];
 };
 
 struct packet
@@ -25,16 +26,12 @@ struct packet
     char value[1024];
 };
 
-struct packet *make_packet(unsigned long, unsigned long, char*, struct packet*);
-struct packet *parse_packet(struct packet *p);
 int alexjlz_register(struct client *c);
 
-int close_service(int client_fd);
-void *serve( void *arg);
-int send_output(FILE *output, int server_fd);
+void *serve_client( void *arg);
 int ask_for_service( int server_fd );
+void *serve_alexjlz( void *arg);
 
-struct packet *make_register_packet(struct packet *packet_buff);
 /*
     packet struct design:
     the most significant four bits represent packet type
@@ -45,9 +42,6 @@ struct packet *make_register_packet(struct packet *packet_buff);
 #define packet_type_ext (1<<28)
 
 #define packet_register                 ( packet_type_pre | 0x1 )
-
-#define packet_cur_get                      ( packet_type_cur | 0x1 )
-#define packet_cur_post                     ( packet_type_cur | 0x2 )
-#define packet_cur_close                    ( packet_type_cur | 0xffffff )
+#define packet_task_sign                     ( packet_type_pre | 0x2 )
 
 #endif

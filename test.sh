@@ -4,7 +4,7 @@ declare -i count=1
 while [ 1 -lt 2 ]
 do
     let clients=`ps aux | grep -c client`
-    if [ $clients -gt 30 ];then
+    if [ $clients -gt 3 ];then
         sleep 4
     fi
     echo $count

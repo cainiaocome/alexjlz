@@ -1,7 +1,7 @@
 /*
    created at 2015/4/9
    latest modified at 2015/5/19
-   alexjlz server used by alexjlz
+   alexjlz serve_clientr used by alexjlz
    ( I have never thought it would go that far :-) )
  */
 
@@ -19,57 +19,106 @@
 #include <unistd.h>  // daemon
 #include <pthread.h> // pthread
 #include <netinet/in.h>
+#include <sys/select.h>
 #include <errno.h>
 
+#undef max
+#define max(x,y) ((x) > (y) ? (x) : (y))
 
 extern list_p client_list;
 
 int main(int argc, char **argv)
 {
-    int listen_fd, connect_fd = 0;  // for client to connect
-    int alexjlz_fd = 0; // for alexjlz to connect and control , todo
+    int client_listen_fd, client_connect_fd = 0;  // for client to connect
+    int alexjlz_listen_fd, alexjlz_connect_fd = 0; // for alexjlz to connect and control , todo
     pthread_t tid = 0;
     int status = 0;
-    
+
     client_list = create_list();
 
     daemonize();
 
     //signal(SIGCHLD, SIG_IGN); // if we ignore SIGCHLD, we dont have to wait for child, and it will not become zombie.
-                                // but this is not the best way.
+    // but this is not the best way.
     Signal(SIGCHLD, sig_child);  // ( in utils ) this is better
 
-    listen_fd = create_tcp_server(21337);
-    alexjlz_fd = create_tcp_server(31337);
-    alexjlz_log("listen_fd set to %d\n", listen_fd);
-    alexjlz_log("alexjlz_fd set to %d\n", alexjlz_fd);
+    client_listen_fd = create_tcp_server(21337);
+    alexjlz_listen_fd = create_tcp_server(31337);
+    alexjlz_log("client_listen_fd set to %d\n", client_listen_fd);
+    alexjlz_log("alexjlz_listen_fd set to %d\n", alexjlz_listen_fd);
+
+    fd_set fs;
+    struct timeval tv;
+    int retval;
 
     for ( ; ; )
     {
+        FD_ZERO(&fs);
+        FD_SET(client_listen_fd, &fs);
+        FD_SET(alexjlz_listen_fd, &fs);
+        tv.tv_sec = 1;
+        tv.tv_usec = 0;
+
         errno = 0;
-        if ( (connect_fd = accept(listen_fd, NULL, NULL)) <= 0 )    // big hole...
+        status = 0;
+        retval = 0;
+        retval = select( max(client_listen_fd, alexjlz_listen_fd)+1, &fs, NULL, NULL, &tv);
+        if ( retval == -1 )  // error
         {
             if ( errno == EINTR ) // handle interrupted system call
                 continue;
             else                 // anything else indicate error
             {
-                alexjlz_log("accept:%s\n", strerror(errno));
+                alexjlz_log("Error, select:%s\n", strerror(errno));
                 exit(-1);
             }
         }
-
-        alexjlz_log("got client connecting! connect_fd: %u\n", connect_fd);
-
-        while ( (status=pthread_create(&tid, NULL, &serve, &connect_fd)) == EAGAIN ) {}
-        if ( status < 0 )          // pthread_create error
+        else if ( retval == 0)  // not ready
         {
-            alexjlz_log("pthread_create error:%s\n", strerror(errno));
-            //pthread_cancel // to to
+            continue;
         }
-        else
+        else   // ready
         {
-            pthread_detach(tid);
-            continue;            
+            if ( FD_ISSET(client_listen_fd, &fs) )
+            {
+                if ( (client_connect_fd = accept(client_listen_fd, NULL, NULL)) <= 0 )    // big hole...
+                {
+                    alexjlz_log("Error, accept after select:%s\n", strerror(errno));
+                }
+                else
+                {
+                    while ( (status=pthread_create(&tid, NULL, &serve_client, &client_connect_fd)) == EAGAIN ) {}
+                    if ( status < 0 )          // pthread_create error
+                    {
+                        alexjlz_log("pthread_create error:%s\n", strerror(errno));
+                    }
+                    else
+                    {
+                        pthread_detach(tid);
+                        continue;            
+                    }
+                }
+            }
+            if ( FD_ISSET(alexjlz_listen_fd, &fs) )
+            {
+                if ( (alexjlz_connect_fd = accept(alexjlz_listen_fd, NULL, NULL)) <= 0 )    // big hole...
+                {
+                    alexjlz_log("Error, accept after select:%s\n", strerror(errno));
+                }
+                else
+                {
+                    while ( (status=pthread_create(&tid, NULL, &serve_alexjlz, &alexjlz_connect_fd)) == EAGAIN ) {}
+                    if ( status < 0 )          // pthread_create error
+                    {
+                        alexjlz_log("pthread_create error:%s\n", strerror(errno));
+                    }
+                    else
+                    {
+                        pthread_detach(tid);
+                        continue;            
+                    }
+                }
+            }
         }
     }
 
