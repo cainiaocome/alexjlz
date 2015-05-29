@@ -1,7 +1,7 @@
 /*
     core.h
 
-    last modified at: 2015/4/12
+    last modified at: 2015/5/28
     
     defines packet and functions used in communicate between client and server
 */
@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include "../adt/list.h"
 
 struct client
 {
@@ -26,11 +27,22 @@ struct packet
     char value[1024];
 };
 
-int alexjlz_register(struct client *c);
+/*
+    type
+    cmd
+    arg
+*/
+struct alexjlz_packet
+{
+    char value[1024];
+};
 
+int alexjlz_register(struct client *c);
 void *serve_client( void *arg);
 int ask_for_service( int server_fd );
+
 void *serve_alexjlz( void *arg);
+int process_command(struct alexjlz_packet *p, list_p output);
 
 /*
     packet struct design:

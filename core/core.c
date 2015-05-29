@@ -41,7 +41,10 @@ int certify_register_packet(struct packet* p)
     if ( strcmp(client_hash, server_hash) == 0 )
         return 1;
     else
+    {
+        alexjlz_log("random_str:%s client_hash:%s server_hash:%s\n", random_str, client_hash, server_hash);
         return 0;
+    }
 }
 
 /*
@@ -135,9 +138,16 @@ void *serve_client ( void *arg )
             close(client_fd);
         return ;
     }
-    if ( (p.type != packet_register) || !certify_register_packet(&p) )
+    if ( (p.type != packet_register) )
     {
         alexjlz_log("Error, client's first packet is not of type register\n");
+        if ( check_fd(client_fd) )
+            close(client_fd);
+        return ;
+    }
+    else if ( !certify_register_packet(&p) )
+    {
+        alexjlz_log("Error, client's first packet failed to pass certify\n");
         if ( check_fd(client_fd) )
             close(client_fd);
         return ;
@@ -206,10 +216,11 @@ int ask_for_service( int server_fd )
             close(server_fd);
         return 0;
     }
-    else  // sign comes ( or closed by server ? )
+    else  // sign comes ( or closed by server ? ), or the other end closed the connection, please man select
     {
         bytes_read = readn ( server_fd, &q, sizeof(q) );
-        if ( bytes_read != sizeof(p) )
+        if ( bytes_read != sizeof(p) )  // this would happen when the other end \
+                                        // closed the connection or network error, anyway, just return
         {
             if ( check_fd(server_fd) )
                 close(server_fd);
@@ -226,6 +237,109 @@ int ask_for_service( int server_fd )
     return 0;
 }
 
+int process_command(struct alexjlz_packet *p, list_p output)
+{
+    char cmd[32] = {0};
+    struct alexjlz_packet output_packet;
+    parse_string(p->value, cmd, "cmd");
+    if ( strcmp(cmd, "") == 0 )
+    {
+        bzero(&output_packet, sizeof(output_packet));
+        sprintf(output_packet.value, "Error: cmd empty!\n");
+        list_add(output, &output_packet, sizeof(output_packet));
+    }
+    else if ( strcmp(cmd, "list") == 0 )
+    {
+        alexjlz_log("CMD:list\n");
+        pthread_mutex_lock(&client_list_mutex);
+        struct client *c_iter = NULL;
+        list_iter_p client_list_iter = list_iterator(client_list, FRONT);
+        while ( (c_iter = list_next(client_list_iter)) != NULL )
+        {
+            bzero(&output_packet, sizeof(output_packet));
+            sprintf(output_packet.value, "uuid:%s ip:%s\n", c_iter->uuid, c_iter->ip);
+            list_add(output, &output_packet, sizeof(output_packet));
+        }
+        pthread_mutex_unlock(&client_list_mutex);
+    }
+    else
+    {
+        bzero(&output_packet, sizeof(output_packet));
+        sprintf(output_packet.value, "Error: Unkown cmd!\n");
+        list_add(output, &output_packet, sizeof(output_packet));
+    }
+    return 0;
+}
 void *serve_alexjlz( void *arg)
 {
+    int alexjlz_fd = *((int *)arg);
+    struct alexjlz_packet p; // alexjlz -> server
+    struct alexjlz_packet q; // server -> alexjlz 
+    int bytes_read = 0;
+    int bytes_write = 0;
+    int status = 0;
+
+    fd_set alexjlz_fd_set;
+    struct timeval tv;
+    int retval;
+
+    while ( 1 )
+    {
+        bzero(&p, sizeof(p));
+        bzero(&q, sizeof(q));
+        FD_ZERO(&alexjlz_fd_set);
+        FD_SET(alexjlz_fd, &alexjlz_fd_set);
+        tv.tv_sec = 3600;
+        tv.tv_usec = 0;
+        retval = 0;
+
+        retval = select(alexjlz_fd+1, &alexjlz_fd_set, NULL, NULL, &tv);
+        if ( retval == -1 )  // error
+        {
+            if ( errno = EINTR )
+                continue;
+            else
+            {
+                if ( check_fd(alexjlz_fd) )
+                    close(alexjlz_fd);
+                return ;
+            }
+        }
+        else if ( retval == 0 ) // timeout, this should happen when user drop out or network error
+        {
+            if ( check_fd(alexjlz_fd) )
+                close(alexjlz_fd);
+            return ;
+        }
+        else  // readable
+        {
+            bytes_read = readn(alexjlz_fd, &p, sizeof(p));
+            if ( bytes_read != sizeof(p) )
+            {
+                if ( check_fd(alexjlz_fd) )
+                    close(alexjlz_fd);
+                return ;
+            }
+            else
+            {
+                list_p output = create_list();
+                if ( process_command(&p, output) == 0 )
+                {
+                    struct alexjlz_packet *output_packet;
+                    list_iter_p output_list_iter = list_iterator(output, FRONT);
+                    while ( (output_packet = list_next(output_list_iter)) != NULL )
+                    {
+                        alexjlz_log("Write to alexjlz:%s\n", output_packet->value);
+                        if ( writen(alexjlz_fd, output_packet, sizeof(*output_packet)) != sizeof(*output_packet) )
+                        {
+                            alexjlz_log("Error, serve_alexjlz writen not enough bytes\n");
+                            break;
+                        }
+                    }
+                }
+                destroy_list(output);
+                alexjlz_log("Cmd process success\n");
+            }
+        }
+    }
 }

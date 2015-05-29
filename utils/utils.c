@@ -49,13 +49,14 @@ int check_fd(int fd)
 char *randomstr(char *buff, int length)
 {
     char *p = buff;
-    char store = 0;
+    unsigned char store = 0;
     int urandom_fd = 0; // file descriptor for /dev/urondom
 
     urandom_fd = open("/dev/urandom", O_RDONLY);
     while ( length > 0 )
     {
         read(urandom_fd, &store, 1); 
+        store = store % 10 + 0x30;  // ascii printable
         *p = store;
         p++;
         length--;

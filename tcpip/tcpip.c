@@ -40,7 +40,7 @@ int create_tcp_server(short port)
         exit(-1);
     }
 
-    if (listen(listen_fd, 3) == -1 )
+    if (listen(listen_fd, 128) == -1 )
     {
         perror("listen");
         exit(-1);
