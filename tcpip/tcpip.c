@@ -84,7 +84,7 @@ int getOurIP()
     close(sock);
 }
 
-static uint8_t ipState[5] = {0}; //starting from 1 becuz yolo
+static uint8_t ipState[5]; //starting from 1 becuz yolo
 in_addr_t getRandomPublicIP()
 {
     if(ipState[1] > 0 && ipState[4] < 255)
@@ -172,7 +172,7 @@ int connect_tcp_server(char *ip, short port)
     if (fd < 0)
     {
         perror("socket");
-        exit(-1);
+        return -1;
     }
 
     bzero(&server_addr, sizeof(server_addr));
@@ -181,13 +181,13 @@ int connect_tcp_server(char *ip, short port)
     if ( inet_pton(AF_INET, ip, &(server_addr.sin_addr) ) < 0 )
     {
         perror("inet_pton");
-        exit(-1);
+        return -1;
     }
 
     if ( connect(fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0 )
     {
         perror("connect");
-        exit(-1);
+        return -1;
     }
 
     return fd;

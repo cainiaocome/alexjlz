@@ -7,9 +7,12 @@
     refer to http://www.linuxprofilm.com/articles/linux-daemon-howto.html for more
 */
 
+#include "../log/log.h"
+
 #include "daemon.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 int daemonize()
 {
@@ -18,11 +21,13 @@ int daemonize()
     /* Fork off the parent process */
     pid = fork();
     if (pid < 0) {
+        alexjlz_log("Error fork:%s\n",strerror(errno));
         exit(EXIT_FAILURE);
     }
     /* If we got a good PID, then
        we can exit the parent process. */
     if (pid > 0) {
+        alexjlz_log("Error fork:%s\n",strerror(errno));
         exit(EXIT_SUCCESS);
     }
 
@@ -35,12 +40,14 @@ int daemonize()
     sid = setsid();
     if (sid < 0) {
         /* Log any failure here */
+        alexjlz_log("Error setsid:%s\n",strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     /* Change the current working directory */
     if ((chdir("/")) < 0) {
         /* Log any failure here */
+        alexjlz_log("Error chdir:%s\n",strerror(errno));
         exit(EXIT_FAILURE);
     }
 

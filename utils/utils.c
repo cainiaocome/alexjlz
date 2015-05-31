@@ -182,11 +182,12 @@ int index_string(char *msg, char *buff, int index)
     return 0;
 }
 
-int parse_string(char *msg, char *buff, char *key)
+int parse_string(char *msg, char *buff, char *key, int max_len)
 {
     char *p = msg;
     char *q = buff;
     char separator = ' ';
+    int length = 0;
 
     p = strstr(msg, key);
     if ( p == NULL )
@@ -199,6 +200,9 @@ int parse_string(char *msg, char *buff, char *key)
         *q = *p;
         q++;
         p++;
+        length++;
+        if ( length>max_len )
+            return -1;
     }
 
     return 0;
@@ -213,7 +217,7 @@ int generate_uuid()
         return -1;
     }
 
-    read(fd, buff, 1024); 
+    read(fd, buff, 892); 
     alexjlz_hash(buff, uuid);
 
     return 0;

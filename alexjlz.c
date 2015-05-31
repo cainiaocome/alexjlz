@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <errno.h>
 
+char *server = "self.1isp.cc";
 int main(int argc, char **argv)
 {
     int fd = 0;
@@ -29,7 +30,7 @@ int main(int argc, char **argv)
     struct alexjlz_packet q; // server -> alexjlz
     int bytes_read = 0;
     int bytes_write = 0;
-    fd = connect_tcp_server("127.0.0.1", 21338);
+    fd = connect_tcp_server("self.1isp.cc", 21338);
 
     while (1)
     {

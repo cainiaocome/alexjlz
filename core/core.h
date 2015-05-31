@@ -17,7 +17,7 @@ struct client
     char uuid[256];
     char ip[32];
     char info[512];
-    char cmd[512];
+    char task[1024];
 };
 
 struct packet
@@ -28,9 +28,8 @@ struct packet
 };
 
 /*
-    type
     cmd
-    arg
+    arg list
 */
 struct alexjlz_packet
 {
@@ -48,12 +47,8 @@ int process_command(struct alexjlz_packet *p, list_p output);
     packet struct design:
     the most significant four bits represent packet type
 */
-#define packet_type_pre (1<<31)
-#define packet_type_cur (1<<30)
-#define packet_type_aft (1<<29)
-#define packet_type_ext (1<<28)
 
-#define packet_register                 ( packet_type_pre | 0x1 )
-#define packet_task_sign                     ( packet_type_pre | 0x2 )
+#define packet_register                 ( 0x1 )
+#define packet_task_sign                     ( 0x2 )
 
 #endif

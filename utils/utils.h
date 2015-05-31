@@ -37,5 +37,5 @@ unsigned char *fdgets(unsigned char *buffer, int bufferSize, int fd);
 unsigned long randomlong(unsigned long a, unsigned long b);
 
 
-int parse_string(char *msg, char *buff, char *key);
+int parse_string(char *msg, char *buff, char *key, int max_len);
 int index_string(char *msg, char *buff, int index);

