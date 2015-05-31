@@ -8,16 +8,25 @@
 #ifndef _CORE_H
 #define _CORE_H
 
+#include "../adt/list.h"
+
 #include <stdio.h>
 #include <stdint.h>
-#include "../adt/list.h"
+#include <time.h>
+
+#define OUTPUT_END ("!!!!!!")
 
 struct client
 {
     char uuid[256];
     char ip[32];
-    char info[512];
+    char info[1024];
     char task[1024];
+    char current_task[1024];
+    char asc_last_heartbeat[64];
+    time_t last_heartbeat;
+    time_t task_starttime;
+    time_t task_endtime;
 };
 
 struct packet
@@ -36,7 +45,7 @@ struct alexjlz_packet
     char value[1024];
 };
 
-int alexjlz_register(struct client *c);
+int alexjlz_register(struct client *c, struct packet *p);
 void *serve_client( void *arg);
 int ask_for_service( int server_fd );
 

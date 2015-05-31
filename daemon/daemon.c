@@ -27,7 +27,6 @@ int daemonize()
     /* If we got a good PID, then
        we can exit the parent process. */
     if (pid > 0) {
-        alexjlz_log("Error fork:%s\n",strerror(errno));
         exit(EXIT_SUCCESS);
     }
 

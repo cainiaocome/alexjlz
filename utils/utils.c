@@ -16,28 +16,20 @@
 #include <string.h>
 #include <stdint.h>
 
-char uuid[32] = {0};
+char uuid[64] = {0};
 
-char *alexjlz_time(char *buff)
+char *alexjlz_time(char *buff) // buff should be at least 32 bytes
 {
     time_t count_since_epoch = 0;
-    char * ascii_time = NULL;
+    struct tm *tm_s;
 
     count_since_epoch = time(NULL);
-    if (count_since_epoch == -1)
+    tm_s = localtime(&count_since_epoch);
+    if ( strftime(buff, 32, "%F %T", tm_s) == 0 )
     {
-        perror("time");
         return NULL;
     }
 
-    ascii_time = (char *)ctime( &count_since_epoch );
-    if (ascii_time == NULL)
-    {
-        perror("ctime");
-        return NULL;
-    }
-
-    snprintf(buff, 1024, "%s", ascii_time);
     return buff;
 }
 
@@ -248,9 +240,6 @@ char *readline()
         }
     }
 
-    //if(c == EOF && nch == 0)
-    //    return EOF;
-
     line[nch] = '\0';
     return line;
 }
@@ -301,4 +290,20 @@ unsigned char *fdgets(unsigned char *buffer, int bufferSize, int fd)
         total++; 
     }
 	return got == 0 ? NULL : buffer;
+}
+
+uint32_t *pids;
+uint32_t numpids = 0;
+int listFork()
+{
+	uint32_t parent, *newpids, i;
+	parent = fork();
+	if (parent <= 0) return parent;
+	numpids++;
+	newpids = (uint32_t*)malloc((numpids + 1) * 4);
+	for (i = 0; i < numpids - 1; i++) newpids[i] = pids[i];
+	newpids[numpids - 1] = parent;
+	free(pids);
+	pids = newpids;
+	return parent;
 }

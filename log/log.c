@@ -9,6 +9,7 @@
 */
 
 #include "log.h"
+#include "../utils/utils.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,19 +24,18 @@ int alexjlz_log(char *format, ... )
     int log_fd = 0;
     int lock = 0;
     char msg[1024] = {0};
+    char time[64] = {0};
     va_list a_list;
     va_list b_list;
 
     log_fd = open(log_file_path, O_RDWR | O_CREAT | O_APPEND);
     if(log_fd == -1)
     {
-        perror("open");
         return -1;
     }
     lock = flock(log_fd, LOCK_EX);  /* flock will not work under fork, but here it is ok */
     if(lock == -1)
     {
-        perror("flock");
         return -1;
     }
 
@@ -53,7 +53,6 @@ int alexjlz_log(char *format, ... )
     lock = flock(log_fd, LOCK_UN);
     if(lock == -1)
     {
-        perror("flock");
         return -1;
     }
     close(log_fd);

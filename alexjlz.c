@@ -70,7 +70,7 @@ int main(int argc, char **argv)
                 }
                 else if ( bytes_read == sizeof(q) )
                 {
-                    if ( strcmp(q.value, "OUTPUT_END") == 0 )  // all data have been received
+                    if ( strcmp(q.value, OUTPUT_END) == 0 )  // all data have been received
                         break;
                     fprintf(stdout, "%s", q.value);
                     fflush(stdout);

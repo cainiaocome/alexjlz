@@ -31,6 +31,7 @@ int get_remote_ip(int fd, char remote_ip[]);
 
 
 // from liz
+int getOurIP();
 unsigned short csum (unsigned short *buf, int count);
 unsigned short tcpcsum(struct iphdr *iph, struct tcphdr *tcph);
 void makeIPPacket(struct iphdr *iph, uint32_t dest, uint32_t source, uint8_t protocol, int packetSize);
