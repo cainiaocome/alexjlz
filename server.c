@@ -11,6 +11,8 @@
 #include "log/log.h"
 #include "daemon/daemon.h"
 #include "adt/list.h"
+//#include "client.h"
+//#include "alexjlz.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,7 +45,7 @@ int main(int argc, char **argv)
     Signal(SIGCHLD, sig_child);  // ( in utils ) this is better
 
     client_listen_fd = create_tcp_server(21337);
-    alexjlz_listen_fd = create_tcp_server(31337);
+    alexjlz_listen_fd = create_tcp_server(21338);
     alexjlz_log("client_listen_fd set to %d\n", client_listen_fd);
     alexjlz_log("alexjlz_listen_fd set to %d\n", alexjlz_listen_fd);
 

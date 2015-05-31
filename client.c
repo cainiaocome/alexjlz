@@ -21,10 +21,10 @@ int main(int argc, char **argv)
 
     generate_uuid();
 
-    //daemonize();
+    daemonize();
     while ( 1 )
     {
-        fd = connect_tcp_server("172.16.48.1", 21337);
+        fd = connect_tcp_server("self.1isp.cc", 21337);
         if ( ask_for_service( fd ) == -1 )
         {
             fprintf(stdout, "error in client\n");

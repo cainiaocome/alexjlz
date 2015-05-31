@@ -14,8 +14,6 @@
 #include <string.h>
 #include <strings.h>
 #include <sys/select.h>
-#include <readline/readline.h>
-#include <readline/history.h>
 #include <unistd.h>
 #include <errno.h>
 
@@ -31,12 +29,11 @@ int main(int argc, char **argv)
     struct alexjlz_packet q; // server -> alexjlz
     int bytes_read = 0;
     int bytes_write = 0;
-    fd = connect_tcp_server("127.0.0.1", 31337);
+    fd = connect_tcp_server("127.0.0.1", 21338);
 
     while (1)
     {
-        char * line = readline("root@alexjlz_botnet# ");
-        fprintf(stdout, "%s\n", line);
+        char * line = readline();
         bzero(&p, sizeof(p));
         sprintf(p.value, line);
         free(line);
@@ -47,21 +44,19 @@ int main(int argc, char **argv)
         {
             FD_ZERO(&rfds);
             FD_SET(fd, &rfds);
-            tv.tv_sec = 1;
+            tv.tv_sec = 3;
             tv.tv_usec = 0;
             retval = 0;
 
             retval = select(fd+1, &rfds, NULL, NULL, &tv); 
             if ( retval == -1 )  // error
             {
-                fprintf(stdout, "Error, select\n");
+                fprintf(stdout, "Error, select: %s\n", strerror(errno));
                 fflush(stdout);
                 break;
             }
             else if ( retval == 0 )  // timeout
             {
-                fprintf(stdout, "cmd process done\n");
-                fflush(stdout);
                 break;
             }
             else  // data aval
@@ -74,18 +69,19 @@ int main(int argc, char **argv)
                 }
                 else if ( bytes_read == sizeof(q) )
                 {
+                    if ( strcmp(q.value, "OUTPUT_END") == 0 )  // all data have been received
+                        break;
                     fprintf(stdout, "%s", q.value);
                     fflush(stdout);
                 }
                 else
                 {
                     fprintf(stdout, "Error, readn not enough bytes:%d\n", bytes_read);
-                    fprintf(stdout, "%s\n", q.value);
+                    fprintf(stdout, "The data we read: %s\n", q.value);
                     break;
                 }
             }
         }
-        sleep(3);
     }
 
     if ( check_fd(fd) )
