@@ -15,6 +15,8 @@
 #include <time.h>
 
 #define OUTPUT_END ("!!!!!!")
+#define USERNAME ("alexjlz")
+#define PASSWORD ("alexsu")
 
 struct client
 {

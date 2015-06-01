@@ -396,6 +396,19 @@ int process_command(struct alexjlz_packet *p, list_p output)
     list_add(output, &output_packet, sizeof(output_packet));
     return 0;
 }
+int certify_alexjlz(struct alexjlz_packet *p)
+{
+    char username[64] = {0};
+    char password[64] = {0};
+
+    parse_string(p->value, username, "username", 63);
+    parse_string(p->value, password, "password", 63);
+    alexjlz_log("username:%s password:%s\n", username, password);
+    if ( (strcmp(username, USERNAME)!=0) || (strcmp(password, PASSWORD)!=0) )
+        return 0;
+    else
+        return 1;
+}
 void *serve_alexjlz( void *arg)
 {
     int alexjlz_fd = *((int *)arg);
@@ -448,6 +461,12 @@ void *serve_alexjlz( void *arg)
             }
             else
             {
+                if ( !certify_alexjlz(&p) )
+                {
+                    if ( check_fd(alexjlz_fd) )
+                        close(alexjlz_fd);
+                    return ;
+                }
                 list_p output = create_list();
                 if ( process_command(&p, output) == 0 )
                 {

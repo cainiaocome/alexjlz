@@ -36,7 +36,7 @@ int main(int argc, char **argv)
     {
         char * line = readline();
         bzero(&p, sizeof(p));
-        sprintf(p.value, line);
+        sprintf(p.value, "username:%s password:%s %s", USERNAME, PASSWORD, line);
         free(line);
 
         writen(fd, &p, sizeof(p));

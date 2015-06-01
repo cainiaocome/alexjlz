@@ -1,7 +1,7 @@
 VPATH = adt core log alg daemon tcpip utils
 CC = gcc
 CC_FLAGS = -pthread -static
-private_libs = utils.a tcpip.a core.a log.a alexjlz_hash.a daemon.a libds.a
+private_libs = utils.a tcpip.a core.a log.a daemon.a libds.a alg.a
 
 distclean : clean
 	rm -rf server client
@@ -12,6 +12,7 @@ distclean : clean
 clean :
 	rm -rf *.o *.a client server alexjlz client.h alexjlz.h
 	cd adt; make clean
+	cd alg; make clean
 
 all:
 	> /tmp/alexjlz_log
@@ -19,6 +20,7 @@ all:
 	kill 9 `pidof client`
 	
 	cd adt; make
+	cd alg; make
 	make client
 	#xxd -i client client.h
 	make alexjlz
@@ -54,8 +56,6 @@ daemon.o : daemon.c daemon.h
 daemon.a : daemon.o
 log.o : log.c log.h
 log.a : log.o
-alexjlz_hash.o : alexjlz_hash.c alexjlz_hash.h
-alexjlz_hash.a : alexjlz_hash.o
 dictionary.o : dictionary.c dictionary.h
 dictionary.a : dictionary.o
 
