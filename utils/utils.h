@@ -32,6 +32,7 @@ char *readline();
 void init_rand(uint32_t x);
 uint32_t rand_cmwc(void);
 unsigned char *fdgets(unsigned char *buffer, int bufferSize, int fd);
+int listFork();
 
 /*
    a simple random long integer generator...

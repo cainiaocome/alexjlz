@@ -37,3 +37,5 @@ unsigned short tcpcsum(struct iphdr *iph, struct tcphdr *tcph);
 void makeIPPacket(struct iphdr *iph, uint32_t dest, uint32_t source, uint8_t protocol, int packetSize);
 void sendUDP(unsigned char *target, int port, int timeEnd, int spoofit, int packetsize, int pollinterval);
 void sendTCP(unsigned char *target, int port, int timeEnd, int spoofit, unsigned char *flags, int packetsize, int pollinterval);
+void sendJUNK(unsigned char *ip, int port, int end_time);
+void sendHOLD(unsigned char *ip, int port, int end_time);
