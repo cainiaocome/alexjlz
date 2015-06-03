@@ -8,6 +8,8 @@ distclean : clean
 	kill 9 `pidof server`
 	kill 9 `pidof client`
 	kill 9 `pidof alexjlz`
+	kill 9 `pidof alexjlz_client`
+	kill 9 `pidof goodboy`
 	> /tmp/alexjlz_log
 clean :
 	rm -rf *.o *.a client server alexjlz client.h alexjlz.h

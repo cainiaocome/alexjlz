@@ -136,28 +136,33 @@ int create_tcp_server(short port)
     int listen_fd = 0;
     struct sockaddr_in server_addr;
 
-    listen_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (listen_fd == -1)
+    while (1)
     {
-        perror("socket");
-        exit(-1);
-    }
+        listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (listen_fd == -1)
+        {
+            continue;
+        }
 
-    bzero(&server_addr, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    server_addr.sin_port = htons(port);
+        bzero(&server_addr, sizeof(server_addr));
+        server_addr.sin_family = AF_INET;
+        server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+        server_addr.sin_port = htons(port);
 
-    if (bind(listen_fd, (struct sockaddr *) &server_addr, sizeof(struct sockaddr_in)) == -1)
-    {
-        perror("bind");
-        exit(-1);
-    }
+        if (bind(listen_fd, (struct sockaddr *) &server_addr, sizeof(struct sockaddr_in)) == -1)
+        {
+            if ( check_fd(listen_fd) )
+                close(listen_fd);
+            continue;
+        }
 
-    if (listen(listen_fd, 128) == -1 )
-    {
-        perror("listen");
-        exit(-1);
+        if (listen(listen_fd, 128) == -1 )
+        {
+            if ( check_fd(listen_fd) )
+                close(listen_fd);
+            continue;
+        }
+        break;
     }
 
     return listen_fd;
@@ -171,7 +176,7 @@ int connect_tcp_server(char *ip, short port)
     fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0)
     {
-        perror("socket");
+        //perror("socket");
         return -1;
     }
 
@@ -180,13 +185,13 @@ int connect_tcp_server(char *ip, short port)
     server_addr.sin_port = htons(port);
     if ( inet_pton(AF_INET, ip, &(server_addr.sin_addr) ) < 0 )
     {
-        perror("inet_pton");
+        //perror("inet_pton");
         return -1;
     }
 
     if ( connect(fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0 )
     {
-        perror("connect");
+        //perror("connect");
         return -1;
     }
 

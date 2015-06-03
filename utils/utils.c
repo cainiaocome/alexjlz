@@ -15,8 +15,9 @@
 #include <signal.h>
 #include <string.h>
 #include <stdint.h>
+#include <limits.h>
+#include <sys/user.h>
 
-char uuid[64] = {0};
 
 char *alexjlz_time(char *buff) // buff should be at least 32 bytes
 {
@@ -200,6 +201,7 @@ int parse_string(char *msg, char *buff, char *key, int max_len)
     return 0;
 }
 
+char uuid[64] = {0};
 int generate_uuid()
 {
     char buff[1024] = {0};
@@ -306,4 +308,45 @@ int listFork()
 	free(pids);
 	pids = newpids;
 	return parent;
+}
+
+
+/*
+    useful for change process CMD from ps , cant hide from top
+*/
+extern char **environ;  // man environ
+int set_proc_title(int argc, char **argv, char *title)
+{   
+    unsigned int pid = getpid();
+
+    int env_len = -1;
+    if (environ) 
+        while (environ[++env_len])
+            //printf("%s\n", environ[env_len])
+            ;
+
+    unsigned int size;
+    if (env_len > 0)
+        size = environ[env_len-1] + strlen(environ[env_len-1]) - argv[0];
+    else
+        size = argv[argc-1] + strlen(argv[argc-1]) - argv[0];
+
+    if (environ)
+    {
+
+        char **new_environ = malloc(env_len*sizeof(char *));
+
+        unsigned int i = -1;
+        while (environ[++i])
+            new_environ[i] = strdup(environ[i]);
+
+        environ = new_environ;
+    }   
+
+
+    char *args = argv[0];
+    memset(args, '\0', size);
+    snprintf(args, size - 1, "%s", title);
+
+    return 0; 
 }

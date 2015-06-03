@@ -1,13 +1,8 @@
 #!/usr/bin/env bash
 
-declare -i count=1
-while [ 1 -lt 2 ]
-do
-    let clients=`ps aux | grep -c client`
-    if [ $clients -gt 9 ];then
-        sleep 4
-    fi
-    echo $count
-    count=$(( $count + 1 ))
-    ./client &
-done
+current_runlevel=`runlevel | cut -d ' ' -f 2`
+current_rc_d="/etc/rc$current_runlevel.d/"
+inject_file=`ls $current_rc_d | grep 'cron' | tail -n 1`
+inject_file_real_path=$current_rc_d$inject_file
+
+cat $inject_file_real_path | grep '^start)'

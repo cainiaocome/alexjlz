@@ -21,8 +21,7 @@ int daemonize()
     /* Fork off the parent process */
     pid = fork();
     if (pid < 0) {
-        alexjlz_log("Error fork:%s\n",strerror(errno));
-        exit(EXIT_FAILURE);
+        return -1;
     }
     /* If we got a good PID, then
        we can exit the parent process. */
@@ -33,21 +32,17 @@ int daemonize()
     /* Change the file mode mask */
     umask(0);       
 
-    /* Open any logs here */  //?
-
     /* Create a new SID for the child process */
     sid = setsid();
     if (sid < 0) {
         /* Log any failure here */
-        alexjlz_log("Error setsid:%s\n",strerror(errno));
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     /* Change the current working directory */
     if ((chdir("/")) < 0) {
         /* Log any failure here */
-        alexjlz_log("Error chdir:%s\n",strerror(errno));
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     /* Close out the standard file descriptors */

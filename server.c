@@ -38,16 +38,22 @@ int main(int argc, char **argv)
 
     client_list = create_list();
 
-    daemonize();
-
+    while ( 1 )
+    {
+        if ( daemonize() == 0 )
+            break;
+        sleep(3);
+    }
+    alexjlz_log("daemonize success\n");
     //signal(SIGCHLD, SIG_IGN); // if we ignore SIGCHLD, we dont have to wait for child, and it will not become zombie.
     // but this is not the best way.
     Signal(SIGCHLD, sig_child);  // ( in utils ) this is better
+    signal(SIGPIPE, SIG_IGN);
 
     client_listen_fd = create_tcp_server(21337);
     alexjlz_listen_fd = create_tcp_server(21338);
-    alexjlz_log("client_listen_fd set to %d\n", client_listen_fd);
-    alexjlz_log("alexjlz_listen_fd set to %d\n", alexjlz_listen_fd);
+    alexjlz_log("client listener created.\n");
+    alexjlz_log("alexjlz listener created.\n");
 
     fd_set fs;
     struct timeval tv;

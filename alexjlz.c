@@ -8,6 +8,7 @@
 #include "utils/utils.h"
 #include "core/core.h"
 #include "alg/alexjlz_hash.h"
+#include "common.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,7 +18,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-char *server = "self.1isp.cc";
+char *server = SERVER;
 int main(int argc, char **argv)
 {
     int fd = 0;

