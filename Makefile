@@ -1,32 +1,32 @@
-VPATH = adt core log alg daemon tcpip utils
+VPATH = adt core log alg daemon tcpip utils tools
 CC = gcc
 CC_FLAGS = -pthread -static
 private_libs = utils.a tcpip.a core.a log.a daemon.a libds.a alg.a
 
 distclean : clean
 	rm -rf server client
+	> /tmp/alexjlz_log
 	kill 9 `pidof server`
 	kill 9 `pidof client`
 	kill 9 `pidof alexjlz`
-	kill 9 `pidof alexjlz_client`
-	kill 9 `pidof goodboy`
-	> /tmp/alexjlz_log
+	kill 9 `pidof sesshd`
 clean :
-	rm -rf *.o *.a client server alexjlz client.h alexjlz.h
+	rm -rf *.o *.a client server alexjlz client.h alexjlz.h update.h
 	cd adt; make clean
 	cd alg; make clean
+	cd tools; make clean
+	cd weapons; make clean
 
 all:
 	> /tmp/alexjlz_log
-	kill 9 `pidof server`
-	kill 9 `pidof client`
 	
+	cd tools; make
 	cd adt; make
 	cd alg; make
+	./tools/alexxxd -i update update.h
+	cd weapons; make
 	make client
-	#xxd -i client client.h
 	make alexjlz
-	#xxd -i alexjlz alexjlz.h
 	make server
 
 .PHONY : log

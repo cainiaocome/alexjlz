@@ -17,6 +17,8 @@
 #include <stdint.h>
 #include <limits.h>
 #include <sys/user.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 
 char *alexjlz_time(char *buff) // buff should be at least 32 bytes

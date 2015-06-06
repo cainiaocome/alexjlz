@@ -1,6 +1,6 @@
 #ifndef _COMMON_H
 #define _COMMON_H
 
-#define SERVER ("self.1isp.cc")
+#define SERVER ("ranerzhebingmeiyouruanyong.1isp.cc")
 
 #endif
