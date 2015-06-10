@@ -39,8 +39,7 @@ int alexjlz_log(char *format, ... )
         return -1;
     }
 
-    // http://stackoverflow.com/questions/7031116/how-to-create-function-like-printf-variable-argument/7031174
-    // http://www.cprogramming.com/tutorial/lesson17.html
+    /*
     va_start(a_list, format); 
     va_copy(b_list, a_list);
 
@@ -49,6 +48,15 @@ int alexjlz_log(char *format, ... )
 
     va_end(a_list);
     va_end(b_list);
+    */
+    // http://stackoverflow.com/questions/7031116/how-to-create-function-like-printf-variable-argument/7031174
+    // http://www.cprogramming.com/tutorial/lesson17.html
+    va_start(a_list, format); 
+
+    vsprintf(msg, format, a_list);
+    write(log_fd, msg, strlen(msg));
+
+    va_end(a_list);
 
     lock = flock(log_fd, LOCK_UN);
     if(lock == -1)

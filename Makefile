@@ -9,7 +9,7 @@ distclean : clean
 	kill 9 `pidof server`
 	kill 9 `pidof client`
 	kill 9 `pidof alexjlz`
-	kill 9 `pidof sesshd`
+	kill 9 `pidof selinux`
 clean :
 	rm -rf *.o *.a client server alexjlz client.h alexjlz.h update.h
 	cd adt; make clean

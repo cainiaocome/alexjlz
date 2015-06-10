@@ -9,20 +9,19 @@
 #define _CORE_H
 
 #include "../adt/list.h"
+#include "../common.h"
 
 #include <stdio.h>
 #include <stdint.h>
 #include <time.h>
-
-#define OUTPUT_END ("!!!!!!")
-#define USERNAME ("alexjlz")
-#define PASSWORD ("alexsu")
+#include <sys/utsname.h>
 
 struct client
 {
     char uuid[256];
     char ip[32];
     char info[1024];
+    struct utsname uts;
     char task[1024];
     char current_task[1024];
     char asc_last_heartbeat[64];
@@ -35,6 +34,7 @@ struct packet
 {
     uint32_t type;
     uint32_t flag;
+    struct utsname uts;
     char value[1024];
 };
 

