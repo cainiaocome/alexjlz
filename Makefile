@@ -48,19 +48,6 @@ alexjlz.o : alexjlz.c
 alexjlz : alexjlz.o $(private_libs)
 	$(CC) $(CC_FLAGS) -o alexjlz $^
 
-utils.o : utils.c utils.h
-utils.a : utils.o
-tcpip.o : tcpip.c tcpip.h
-tcpip.a : tcpip.o
-core.o : core.h core.c utils.a
-core.a : core.o
-daemon.o : daemon.c daemon.h
-daemon.a : daemon.o
-log.o : log.c log.h
-log.a : log.o
-dictionary.o : dictionary.c dictionary.h
-dictionary.a : dictionary.o
-
 %.o : %.c %.h
 	$(CC) $(CC_FLAGS) -c -o $@ $<
 %.a : %.o

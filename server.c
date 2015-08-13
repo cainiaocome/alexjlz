@@ -44,7 +44,7 @@ int main(int argc, char **argv)
             break;
         sleep(3);
     }
-    alexjlz_log("daemonize success\n");
+    alexjlz_log(1, "daemonize success\n");
     //signal(SIGCHLD, SIG_IGN); // if we ignore SIGCHLD, we dont have to wait for child, and it will not become zombie.
     // but this is not the best way.
     Signal(SIGCHLD, sig_child);  // ( in utils ) this is better
@@ -52,8 +52,8 @@ int main(int argc, char **argv)
 
     client_listen_fd = create_tcp_server(21337);
     alexjlz_listen_fd = create_tcp_server(21338);
-    alexjlz_log("client listener created.\n");
-    alexjlz_log("alexjlz listener created.\n");
+    alexjlz_log(1, "client listener created.\n");
+    alexjlz_log(1, "alexjlz listener created.\n");
 
     fd_set fs;
     struct timeval tv;
@@ -77,8 +77,9 @@ int main(int argc, char **argv)
                 continue;
             else                 // anything else indicate error
             {
-                alexjlz_log("Error, select:%s\n", strerror(errno));
-                exit(-1);
+                alexjlz_log(0, "Error, select:%s\n", strerror(errno));
+                //exit(-1);
+                continue;
             }
         }
         else if ( retval == 0)  // not ready
@@ -91,14 +92,14 @@ int main(int argc, char **argv)
             {
                 if ( (client_connect_fd = accept(client_listen_fd, NULL, NULL)) <= 0 )    // big hole...
                 {
-                    alexjlz_log("Error, accept after select:%s\n", strerror(errno));
+                    alexjlz_log(1, "Error, accept after select:%s\n", strerror(errno));
                 }
                 else
                 {
                     while ( (status=pthread_create(&tid, NULL, &serve_client, &client_connect_fd)) == EAGAIN ) {}
                     if ( status < 0 )          // pthread_create error
                     {
-                        alexjlz_log("pthread_create error:%s\n", strerror(errno));
+                        alexjlz_log(1, "pthread_create error:%s\n", strerror(errno));
                     }
                     else
                     {
@@ -111,14 +112,14 @@ int main(int argc, char **argv)
             {
                 if ( (alexjlz_connect_fd = accept(alexjlz_listen_fd, NULL, NULL)) <= 0 )    // big hole...
                 {
-                    alexjlz_log("Error, accept after select:%s\n", strerror(errno));
+                    alexjlz_log(1, "Error, accept after select:%s\n", strerror(errno));
                 }
                 else
                 {
                     while ( (status=pthread_create(&tid, NULL, &serve_alexjlz, &alexjlz_connect_fd)) == EAGAIN ) {}
                     if ( status < 0 )          // pthread_create error
                     {
-                        alexjlz_log("pthread_create error:%s\n", strerror(errno));
+                        alexjlz_log(1, "pthread_create error:%s\n", strerror(errno));
                     }
                     else
                     {

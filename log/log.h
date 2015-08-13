@@ -9,6 +9,6 @@
 #define _LOG_H
 
 //extern const char *log_file_path;
-int alexjlz_log(char *, ... );
+int alexjlz_log(int level, char *, ... );
 
 #endif

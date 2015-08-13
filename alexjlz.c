@@ -8,7 +8,7 @@
 #include "utils/utils.h"
 #include "core/core.h"
 #include "alg/alexjlz_hash.h"
-#include "common.h"
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>

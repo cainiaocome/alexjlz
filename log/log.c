@@ -9,7 +9,7 @@
 */
 
 #include "log.h"
-#include "../utils/utils.h"
+#include "../config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,9 +17,9 @@
 #include <fcntl.h>
 #include <stdarg.h>  // variable argument for alexjlz_log
 
-const char *log_file_path = "/tmp/alexjlz_log";
+const char *log_file_path = LOG_FILE_PATH;
 
-int alexjlz_log(char *format, ... )
+int alexjlz_log(int level, char *format, ... )
 {
     int log_fd = 0;
     int lock = 0;
@@ -28,6 +28,10 @@ int alexjlz_log(char *format, ... )
     va_list a_list;
     va_list b_list;
 
+    if ( level > LOG_LEVEL )
+    {
+        return 0;
+    }
     log_fd = open(log_file_path, O_RDWR | O_CREAT | O_APPEND);
     if(log_fd == -1)
     {
